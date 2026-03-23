@@ -1,4 +1,5 @@
 import type { PortalPageContent } from "@/src/features/portal/types/portal";
+import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
 import styles from "./portal-shell.module.css";
 
 interface ContentPanelProps {
@@ -13,6 +14,7 @@ export function ContentPanel({
   isLoading
 }: ContentPanelProps) {
   const isHome = content?.id === "home";
+  const isUserManagement = content?.id === "user-management-home";
 
   return (
     <section className={styles.contentPanel}>
@@ -47,7 +49,7 @@ export function ContentPanel({
             </dl>
           ) : null}
 
-          {!isHome && content.summaryCards?.length ? (
+          {!isHome && !isUserManagement && content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -62,7 +64,7 @@ export function ContentPanel({
             </section>
           ) : null}
 
-          {!isHome && content.dataTable ? (
+          {!isHome && !isUserManagement && content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
               {content.dataTable.caption ? (
@@ -92,7 +94,9 @@ export function ContentPanel({
             </section>
           ) : null}
 
-          {!isHome
+          {isUserManagement ? <UserManagementWorkspace /> : null}
+
+          {!isHome && !isUserManagement
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>

@@ -69,6 +69,12 @@ const portalTree: PortalTreeNode[] = [
   { id: "surveillance-reports", label: "Surveillance", kind: "item" },
   { id: "standard-reports", label: "Standard Reports", kind: "item" },
   { id: "human-resources", label: "Human Resources", kind: "item" },
+  {
+    id: "user-management",
+    label: "User Management",
+    kind: "group",
+    children: [{ id: "user-management-home", label: "Home", kind: "item" }]
+  },
   { id: "client-satisfaction", label: "Client Satisfaction", kind: "item" },
   { id: "quality-of-care", label: "Quality of care", kind: "item" },
   { id: "self-service", label: "Self Service", kind: "item" },
@@ -81,7 +87,17 @@ const portalTree: PortalTreeNode[] = [
     label: "Outbreak Management",
     kind: "group",
     children: [
-      { id: "cif", label: "CIF", kind: "item" },
+      {
+        id: "cif",
+        label: "CIF",
+        kind: "group",
+        children: [
+          { id: "cif-home", label: "Home", kind: "item" },
+          { id: "cif-outbreak", label: "Outbreak", kind: "item" },
+          { id: "cif-vhf", label: "VHF", kind: "item" },
+          { id: "cif-mpox", label: "MPOX", kind: "item" }
+        ]
+      },
       { id: "contact-tracing", label: "Contact Tracing", kind: "item" },
       { id: "case-management", label: "Case Management", kind: "item" },
       { id: "deployment", label: "Deployment", kind: "item" },
@@ -204,6 +220,31 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Keep results readable in a plain content pane for older field devices and shared desktops."
     ]
   }),
+  "user-management": createGroupPage({
+    id: "user-management",
+    title: "User Management",
+    intro:
+      "User Management is now organized as a folder so administrators can enter the workspace from a stable parent node and expand into concrete files as the module grows.",
+    owner: "System Administration",
+    modules: ["Home"],
+    process: [
+      "Open Home to load the live user administration workspace.",
+      "Keep the parent folder stable so additional admin files can be added later without changing the tree pattern.",
+      "Use the same legacy shell for user review, permissions, and update workflows."
+    ]
+  }),
+  "user-management-home": {
+    id: "user-management-home",
+    title: "Home",
+    intro:
+      "Review accounts, inspect effective permissions, and send controlled update payloads to the live administration API without leaving the legacy portal shell.",
+    records: [
+      { label: "Primary source", value: "Response platform user administration API" },
+      { label: "Refresh cadence", value: "Live on-demand query" },
+      { label: "Responsible unit", value: "System Administration" }
+    ],
+    sections: []
+  },
   "service-utilization": createLeafPage({
     id: "service-utilization",
     title: "Service Utilization",
@@ -798,13 +839,25 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Cache page data with TanStack Query for snappier repeat access."
     ]
   }),
-  cif: createLeafPage({
+  cif: createGroupPage({
     id: "cif",
     title: "CIF",
+    intro: "CIF is now organized as a folder with four files so teams can move between the initial landing screen and disease-specific investigation views without leaving the response tree.",
+    owner: "Incident Investigation Team",
+    modules: ["Home", "Outbreak", "VHF", "MPOX"],
+    process: [
+      "Open Home first for the initial CIF landing screen and quick operational orientation.",
+      "Move into Outbreak, VHF, or MPOX when the review needs disease-specific case investigation views.",
+      "Keep the folder structure stable so operators can find the same four files every time."
+    ]
+  }),
+  "cif-home": createLeafPage({
+    id: "cif-home",
+    title: "Home",
     source: "Case investigation forms",
     cadence: "Near-real-time review",
     owner: "Incident Investigation Team",
-    intro: "Review and manage investigation records inside the same response workspace used for tracing and deployment.",
+    intro: "The initial CIF screen provides a quick operational view of case investigation activity before teams drill into outbreak-specific workflows.",
     summaryCards: [
       { label: "Open CIFs", value: "128", note: "All active investigations in the current queue" },
       { label: "Pending Review", value: "19", note: "Forms still waiting for district verification" },
@@ -847,6 +900,135 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Confirm identifiers and dates are complete.",
       "Check exposure details for missing core fields.",
       "Resolve duplicates before downstream action."
+    ]
+  }),
+  "cif-outbreak": createLeafPage({
+    id: "cif-outbreak",
+    title: "Outbreak",
+    source: "Outbreak-linked case investigation forms",
+    cadence: "Continuous response review",
+    owner: "Outbreak Investigation Desk",
+    intro: "Focus on outbreak-linked investigation records with a straightforward grid that keeps triage and escalation visible.",
+    summaryCards: [
+      { label: "Open outbreaks", value: "14", note: "Investigations currently tied to active outbreak events" },
+      { label: "Escalations", value: "5", note: "Outbreak CIFs needing same-day epidemiology review" },
+      { label: "District review", value: "11", note: "Records waiting for district outbreak confirmation" },
+      { label: "Closed this week", value: "38", note: "Outbreak investigations completed in the current reporting week" }
+    ],
+    dataTable: {
+      title: "Outbreak CIF Queue",
+      caption: "Representative outbreak-oriented CIF records for the folder preview",
+      columns: ["Outbreak", "CIF ID", "District", "Stage", "Priority", "Assigned", "Updated"],
+      rows: [
+        {
+          id: "cif-outbreak-001",
+          cells: ["Cholera Cluster 04", "CIF-OB-001", "Kampala", "Verification", "High", "Dr. Namusoke", "23 Mar 2026, 09:18"]
+        },
+        {
+          id: "cif-outbreak-002",
+          cells: ["Measles Alert 09", "CIF-OB-002", "Arua", "Field Follow-up", "Medium", "A. Draru", "23 Mar 2026, 08:47"]
+        },
+        {
+          id: "cif-outbreak-003",
+          cells: ["Anthrax Alert 02", "CIF-OB-003", "Mbale", "Desk Review", "Medium", "L. Chebet", "22 Mar 2026, 17:03"]
+        }
+      ]
+    },
+    actions: [
+      "Prioritize outbreak-linked CIFs with active escalations.",
+      "Track which districts still need to complete verification.",
+      "Coordinate case review with the emergency desk and surveillance leads."
+    ],
+    checks: [
+      "Confirm every outbreak CIF is attached to the correct event.",
+      "Review priority flags before assigning next actions.",
+      "Ensure district status reflects the latest field update."
+    ]
+  }),
+  "cif-vhf": createLeafPage({
+    id: "cif-vhf",
+    title: "VHF",
+    source: "Viral hemorrhagic fever investigation forms",
+    cadence: "High-alert operational review",
+    owner: "VHF Response Desk",
+    intro: "Track viral hemorrhagic fever CIFs in a focused screen built for rapid review, laboratory coordination, and field escalation.",
+    summaryCards: [
+      { label: "Active VHF CIFs", value: "9", note: "Open VHF investigations in the current monitoring window" },
+      { label: "Lab pending", value: "4", note: "Waiting for sample confirmation or result posting" },
+      { label: "Field follow-up", value: "3", note: "Records requiring immediate district follow-up" },
+      { label: "Closed 72h", value: "6", note: "VHF investigations closed in the last three days" }
+    ],
+    dataTable: {
+      title: "VHF Investigation Queue",
+      caption: "Representative VHF CIF records in the current workflow",
+      columns: ["CIF ID", "Patient", "District", "Specimen", "Status", "Assigned team", "Updated"],
+      rows: [
+        {
+          id: "cif-vhf-001",
+          cells: ["CIF-VHF-001", "Amina N.", "Gulu", "Collected", "Lab Pending", "Rapid Response Team", "23 Mar 2026, 08:12"]
+        },
+        {
+          id: "cif-vhf-002",
+          cells: ["CIF-VHF-002", "John O.", "Kasese", "In Transit", "Field Follow-up", "VHF Desk", "22 Mar 2026, 16:29"]
+        },
+        {
+          id: "cif-vhf-003",
+          cells: ["CIF-VHF-003", "Grace T.", "Masaka", "Received", "Review", "Lab Liaison", "22 Mar 2026, 14:55"]
+        }
+      ]
+    },
+    actions: [
+      "Review specimen movement and laboratory status for each active VHF CIF.",
+      "Escalate high-risk investigations to the rapid response desk immediately.",
+      "Keep field and lab teams aligned on the same record state."
+    ],
+    checks: [
+      "Validate symptom onset and exposure timelines.",
+      "Confirm specimen chain-of-custody details are complete.",
+      "Ensure VHF priority cases have current assignment ownership."
+    ]
+  }),
+  "cif-mpox": createLeafPage({
+    id: "cif-mpox",
+    title: "MPOX",
+    source: "MPOX case investigation forms",
+    cadence: "Daily response review",
+    owner: "MPOX Incident Team",
+    intro: "Use the MPOX file to review case investigations, cluster context, and operational follow-up in a disease-specific screen.",
+    summaryCards: [
+      { label: "Open MPOX CIFs", value: "21", note: "Current investigations linked to MPOX notifications" },
+      { label: "Cluster linked", value: "8", note: "Cases already mapped to known transmission clusters" },
+      { label: "Needs interview", value: "6", note: "Cases waiting for complete interview capture" },
+      { label: "Closed today", value: "5", note: "MPOX investigation forms resolved in the last day" }
+    ],
+    dataTable: {
+      title: "MPOX Investigation Queue",
+      caption: "Representative MPOX CIF records for the folder preview",
+      columns: ["CIF ID", "District", "Cluster", "Interview", "Status", "Owner", "Updated"],
+      rows: [
+        {
+          id: "cif-mpox-001",
+          cells: ["CIF-MPX-001", "Wakiso", "Cluster A", "Complete", "Review", "N. Kyomuhendo", "23 Mar 2026, 09:01"]
+        },
+        {
+          id: "cif-mpox-002",
+          cells: ["CIF-MPX-002", "Kampala", "Unlinked", "Pending", "Needs Interview", "C. Lule", "22 Mar 2026, 18:26"]
+        },
+        {
+          id: "cif-mpox-003",
+          cells: ["CIF-MPX-003", "Mukono", "Cluster B", "Complete", "Closed", "MPOX Desk", "22 Mar 2026, 13:40"]
+        }
+      ]
+    },
+    actions: [
+      "Track interview completion and cluster linkage for active MPOX CIFs.",
+      "Separate unlinked cases quickly for epidemiology review.",
+      "Prepare concise operational notes for the incident management team."
+    ],
+    checks: [
+      "Confirm cluster assignment is current.",
+      "Validate rash onset and interview completeness.",
+      "Review open records for missing exposure or contact details."
     ]
   }),
   "contact-tracing": createLeafPage({
