@@ -951,7 +951,8 @@ const portalContentById: Record<string, PortalPageContent> = {
     source: "Viral hemorrhagic fever investigation forms",
     cadence: "High-alert operational review",
     owner: "VHF Response Desk",
-    intro: "Track viral hemorrhagic fever CIFs in a focused screen built for rapid review, laboratory coordination, and field escalation.",
+    intro:
+      "Review the live VHF patient registry in a focused CIF screen built for rapid triage, field follow-up, and laboratory coordination.",
     summaryCards: [
       { label: "Active VHF CIFs", value: "9", note: "Open VHF investigations in the current monitoring window" },
       { label: "Lab pending", value: "4", note: "Waiting for sample confirmation or result posting" },
