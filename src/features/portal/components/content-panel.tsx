@@ -1,4 +1,5 @@
 import type { PortalPageContent } from "@/src/features/portal/types/portal";
+import { CifVhfWorkspace } from "@/src/features/cif/components/cif-vhf-workspace";
 import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
 import styles from "./portal-shell.module.css";
 
@@ -15,6 +16,7 @@ export function ContentPanel({
 }: ContentPanelProps) {
   const isHome = content?.id === "home";
   const isUserManagement = content?.id === "user-management-home";
+  const isCifVhf = content?.id === "cif-vhf";
 
   return (
     <section className={styles.contentPanel}>
@@ -49,7 +51,7 @@ export function ContentPanel({
             </dl>
           ) : null}
 
-          {!isHome && !isUserManagement && content.summaryCards?.length ? (
+          {!isHome && !isUserManagement && !isCifVhf && content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -64,7 +66,7 @@ export function ContentPanel({
             </section>
           ) : null}
 
-          {!isHome && !isUserManagement && content.dataTable ? (
+          {!isHome && !isUserManagement && !isCifVhf && content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
               {content.dataTable.caption ? (
@@ -95,8 +97,9 @@ export function ContentPanel({
           ) : null}
 
           {isUserManagement ? <UserManagementWorkspace /> : null}
+          {isCifVhf ? <CifVhfWorkspace /> : null}
 
-          {!isHome && !isUserManagement
+          {!isHome && !isUserManagement && !isCifVhf
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>

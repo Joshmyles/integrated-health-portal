@@ -109,7 +109,7 @@ export async function requestResponseHealth<T>(path: string, init: RequestInit =
 
   if (!response.ok) {
     throw new ResponseHealthApiError(
-      extractMessage(payload) ?? "The upstream user management request failed.",
+      extractMessage(payload) ?? "The upstream platform request failed.",
       response.status
     );
   }
