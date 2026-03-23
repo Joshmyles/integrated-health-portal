@@ -1,0 +1,46 @@
+:root {
+  --legacy-page-bg: #cfcfcf;
+  --legacy-window-bg: #efefef;
+  --legacy-surface: #f8f8f8;
+  --legacy-border-dark: #7f7f7f;
+  --legacy-border-mid: #a4a4a4;
+  --legacy-border-light: #ffffff;
+  --legacy-panel-shadow: #d2d2d2;
+  --legacy-title-top: #e3e3e3;
+  --legacy-title-bottom: #c8c8c8;
+  --legacy-sidebar-bg: #f3f3f3;
+  --legacy-highlight: #d8eee0;
+  --legacy-highlight-border: #77ab87;
+  --legacy-text: #151515;
+  --legacy-muted: #4a4a4a;
+  --legacy-accent: #275772;
+  --legacy-status: #365a2c;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+}
+
+body {
+  background: linear-gradient(180deg, #d9d9d9 0%, var(--legacy-page-bg) 100%);
+  color: var(--legacy-text);
+  font-family: Tahoma, Verdana, Geneva, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
