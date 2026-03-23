@@ -112,6 +112,12 @@ export function deleteOutbreak(outbreakId: number) {
   });
 }
 
+export function closeOutbreak(outbreakId: number) {
+  return requestJson<unknown>(`/api/outbreaks/${outbreakId}/close`, {
+    method: "POST"
+  });
+}
+
 export function updateOutbreak(outbreakId: number, payload: UpdateOutbreakPayload) {
   return requestJson<unknown>(`/api/outbreaks/${outbreakId}`, {
     method: "PUT",

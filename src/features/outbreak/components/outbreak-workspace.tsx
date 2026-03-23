@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useAssignOutbreak } from "@/src/features/outbreak/hooks/use-assign-outbreak";
 import { useAssignableUsers } from "@/src/features/outbreak/hooks/use-assignable-users";
 import { useOutbreakAssignments } from "@/src/features/outbreak/hooks/use-outbreak-assignments";
+import { useCloseOutbreak } from "@/src/features/outbreak/hooks/use-close-outbreak";
 import { useCreateOutbreak } from "@/src/features/outbreak/hooks/use-create-outbreak";
 import { useDeleteOutbreak } from "@/src/features/outbreak/hooks/use-delete-outbreak";
 import { useUpdateOutbreak } from "@/src/features/outbreak/hooks/use-update-outbreak";
@@ -38,6 +39,7 @@ interface AssignFormState {
 
 interface AssignmentListRow {
   assignedAt: string;
+  assignedBy: string;
   id: string;
   outbreakId: string;
   outbreakName: string;
@@ -96,6 +98,12 @@ function readUnknownString(value: unknown, fallback = "-"): string {
       return valid ? readUnknownString(value.String, fallback) : fallback;
     }
 
+    if ("Int64" in value) {
+      const valid = "Valid" in value ? Boolean(value.Valid) : true;
+      const int64Value = (value as { Int64?: unknown }).Int64;
+      return valid ? readUnknownString(int64Value, fallback) : fallback;
+    }
+
     if ("name" in value) {
       return readUnknownString(value.name, fallback);
     }
@@ -106,6 +114,14 @@ function readUnknownString(value: unknown, fallback = "-"): string {
 
     if ("id" in value) {
       return readUnknownString(value.id, fallback);
+    }
+
+    if ("user_name" in value) {
+      return readUnknownString(value.user_name, fallback);
+    }
+
+    if ("user_id" in value) {
+      return readUnknownString(value.user_id, fallback);
     }
   }
 
@@ -195,6 +211,7 @@ function toAssignmentRow(item: OutbreakAssignmentRecord, index: number): Assignm
   if (!isRecord(item)) {
     return {
       assignedAt: "-",
+      assignedBy: "-",
       id: `assignment-${index}`,
       outbreakId: "-",
       outbreakName: "-",
@@ -228,20 +245,28 @@ function toAssignmentRow(item: OutbreakAssignmentRecord, index: number): Assignm
   const userLabel = readUnknownString(
     getRecordValue(item, ["user_name", "username", "user_email"]) ??
       (isRecord(userRef)
-        ? getRecordValue(userRef, ["name", "username", "email"])
+        ? getRecordValue(userRef, ["user_name", "name", "username", "email"])
         : undefined),
     "-"
   );
   const assignedAt = formatUnknownDate(
     getRecordValue(item, ["assigned_at", "assignedAt", "created_at", "timestamp"])
   );
-  const status = readUnknownString(
-    getRecordValue(item, ["status", "assignment_status", "state"]),
+  const isActive = getRecordValue(item, ["is_active", "isActive"]);
+  const status =
+    typeof isActive === "boolean"
+      ? isActive
+        ? "Active"
+        : "Inactive"
+      : readUnknownString(getRecordValue(item, ["status", "assignment_status", "state"]), "-");
+  const assignedBy = readUnknownString(
+    getRecordValue(item, ["assigned_by", "assignedBy"]),
     "-"
   );
 
   return {
     assignedAt,
+    assignedBy,
     id,
     outbreakId,
     outbreakName,
@@ -317,6 +342,7 @@ export function OutbreakWorkspace() {
   const outbreaksQuery = useOutbreaks();
   const assignmentsQuery = useOutbreakAssignments(isAssignmentsTab);
   const createMutation = useCreateOutbreak();
+  const closeMutation = useCloseOutbreak();
   const updateMutation = useUpdateOutbreak();
   const assignMutation = useAssignOutbreak();
   const deleteMutation = useDeleteOutbreak();
@@ -327,6 +353,7 @@ export function OutbreakWorkspace() {
   const [openMenuOutbreakId, setOpenMenuOutbreakId] = useState<number | null>(null);
   const [detailsOutbreak, setDetailsOutbreak] = useState<OutbreakRecord | null>(null);
   const [editTargetOutbreak, setEditTargetOutbreak] = useState<OutbreakRecord | null>(null);
+  const [closeTargetOutbreak, setCloseTargetOutbreak] = useState<OutbreakRecord | null>(null);
   const [deleteTargetOutbreak, setDeleteTargetOutbreak] = useState<OutbreakRecord | null>(null);
   const [assignOutbreakId, setAssignOutbreakId] = useState<number | null>(null);
   const [formState, setFormState] = useState<OutbreakFormState>(INITIAL_FORM_STATE);
@@ -378,6 +405,12 @@ export function OutbreakWorkspace() {
       ? updateMutation.error.message
       : updateMutation.error
         ? "The outbreak could not be updated."
+        : null;
+  const closeError =
+    closeMutation.error instanceof OutbreakRequestError
+      ? closeMutation.error.message
+      : closeMutation.error
+        ? "The outbreak could not be closed."
         : null;
   const assignError =
     assignMutation.error instanceof OutbreakRequestError
@@ -437,6 +470,7 @@ export function OutbreakWorkspace() {
       setOpenMenuOutbreakId(null);
       setDetailsOutbreak(null);
       setEditTargetOutbreak(null);
+      setCloseTargetOutbreak(null);
       setDeleteTargetOutbreak(null);
       setIsModalOpen(false);
       setIsEditModalOpen(false);
@@ -445,6 +479,7 @@ export function OutbreakWorkspace() {
       setEditFormError(null);
       setAssignFormError(null);
       createMutation.reset();
+      closeMutation.reset();
       updateMutation.reset();
       assignMutation.reset();
       deleteMutation.reset();
@@ -457,7 +492,7 @@ export function OutbreakWorkspace() {
       document.removeEventListener("mousedown", handleDocumentClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [assignMutation, createMutation, deleteMutation, updateMutation]);
+  }, [assignMutation, closeMutation, createMutation, deleteMutation, updateMutation]);
 
   useEffect(() => {
     setOpenMenuOutbreakId(null);
@@ -467,6 +502,7 @@ export function OutbreakWorkspace() {
       setIsModalOpen(false);
       setIsEditModalOpen(false);
       setIsAssignModalOpen(false);
+      setCloseTargetOutbreak(null);
       setDeleteTargetOutbreak(null);
     }
   }, [activeTab]);
@@ -553,6 +589,17 @@ export function OutbreakWorkspace() {
     setOpenMenuOutbreakId(null);
     setDeleteTargetOutbreak(outbreak);
     deleteMutation.reset();
+  }
+
+  function openCloseModal(outbreak: OutbreakRecord) {
+    setOpenMenuOutbreakId(null);
+    setCloseTargetOutbreak(outbreak);
+    closeMutation.reset();
+  }
+
+  function closeCloseModal() {
+    setCloseTargetOutbreak(null);
+    closeMutation.reset();
   }
 
   function closeDeleteModal() {
@@ -683,6 +730,36 @@ export function OutbreakWorkspace() {
         }
 
         closeDeleteModal();
+      }
+    });
+  }
+
+  function openCloseFromDetails() {
+    if (!detailsOutbreak) {
+      return;
+    }
+
+    const outbreak = detailsOutbreak;
+    closeDetailsModal();
+    openCloseModal(outbreak);
+  }
+
+  function handleCloseOutbreak() {
+    if (!closeTargetOutbreak) {
+      return;
+    }
+
+    closeMutation.mutate(closeTargetOutbreak.id, {
+      onSuccess: () => {
+        if (detailsOutbreak?.id === closeTargetOutbreak.id) {
+          closeDetailsModal();
+        }
+
+        if (editTargetOutbreak?.id === closeTargetOutbreak.id) {
+          closeEditModal();
+        }
+
+        closeCloseModal();
       }
     });
   }
@@ -852,6 +929,15 @@ export function OutbreakWorkspace() {
                               >
                                 Edit outbreak
                               </button>
+                              {readNullableString(outbreak.status, "").toLowerCase() !== "closed" ? (
+                                <button
+                                  className={styles.dropdownItem}
+                                  onClick={() => openCloseModal(outbreak)}
+                                  type="button"
+                                >
+                                  Close outbreak
+                                </button>
+                              ) : null}
                               <button
                                 className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
                                 onClick={() => openDeleteModal(outbreak)}
@@ -911,6 +997,7 @@ export function OutbreakWorkspace() {
                     <th scope="col">User ID</th>
                     <th scope="col">User</th>
                     <th scope="col">Assigned At</th>
+                    <th scope="col">Assigned By</th>
                     <th scope="col">Status</th>
                   </tr>
                 </thead>
@@ -923,6 +1010,7 @@ export function OutbreakWorkspace() {
                       <td>{row.userId}</td>
                       <td>{row.userLabel}</td>
                       <td>{row.assignedAt}</td>
+                      <td>{row.assignedBy}</td>
                       <td>{row.status}</td>
                     </tr>
                   ))}
@@ -1241,6 +1329,11 @@ export function OutbreakWorkspace() {
               <button className={styles.primaryButton} onClick={openAssignFromDetails} type="button">
                 Assign Outbreak
               </button>
+              {readNullableString(detailsOutbreak.status, "").toLowerCase() !== "closed" ? (
+                <button className={styles.primaryButton} onClick={openCloseFromDetails} type="button">
+                  Close Outbreak
+                </button>
+              ) : null}
             </div>
           </div>
         </div>
@@ -1320,6 +1413,56 @@ export function OutbreakWorkspace() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {closeTargetOutbreak ? (
+        <div className={styles.modalBackdrop} onClick={closeCloseModal} role="presentation">
+          <div
+            className={styles.modalWindow}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="close-outbreak-modal-title"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <div className={styles.modalTitle} id="close-outbreak-modal-title">
+                  Close Outbreak
+                </div>
+                <div className={styles.modalSubtitle}>
+                  POST /api/outbreaks/{closeTargetOutbreak.id}/close
+                </div>
+              </div>
+              <button className={styles.modalCloseButton} onClick={closeCloseModal} type="button">
+                Close
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p className={styles.warningCopy}>
+                This action will close outbreak #{closeTargetOutbreak.id}
+                {` (${readNullableString(closeTargetOutbreak.name)})`}.
+              </p>
+              <p className={styles.warningCopy}>You can still view it, but it will no longer be active.</p>
+
+              {closeError ? <div className={styles.errorText}>{closeError}</div> : null}
+            </div>
+
+            <div className={styles.formActions}>
+              <button className={styles.secondaryButton} onClick={closeCloseModal} type="button">
+                Cancel
+              </button>
+              <button
+                className={styles.primaryButton}
+                disabled={closeMutation.isPending}
+                onClick={handleCloseOutbreak}
+                type="button"
+              >
+                {closeMutation.isPending ? "Closing..." : "Close outbreak"}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
