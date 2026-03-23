@@ -19,6 +19,10 @@ export interface OutbreakRecord {
   status?: NullableStringValue;
 }
 
+export interface OutbreakAssignmentRecord {
+  [key: string]: unknown;
+}
+
 export interface CreateOutbreakPayload {
   description: string;
   end_date: string;

@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { useAssignOutbreak } from "@/src/features/outbreak/hooks/use-assign-outbreak";
 import { useAssignableUsers } from "@/src/features/outbreak/hooks/use-assignable-users";
+import { useOutbreakAssignments } from "@/src/features/outbreak/hooks/use-outbreak-assignments";
 import { useCreateOutbreak } from "@/src/features/outbreak/hooks/use-create-outbreak";
 import { useDeleteOutbreak } from "@/src/features/outbreak/hooks/use-delete-outbreak";
 import { useUpdateOutbreak } from "@/src/features/outbreak/hooks/use-update-outbreak";
@@ -11,6 +12,7 @@ import { useOutbreaks } from "@/src/features/outbreak/hooks/use-outbreaks";
 import { OutbreakRequestError } from "@/src/features/outbreak/lib/outbreak-client";
 import type {
   AssignOutbreakPayload,
+  OutbreakAssignmentRecord,
   NullableStringValue,
   NullableTimeValue,
   OutbreakRecord,
@@ -34,6 +36,18 @@ interface AssignFormState {
   userId: string;
 }
 
+interface AssignmentListRow {
+  assignedAt: string;
+  id: string;
+  outbreakId: string;
+  outbreakName: string;
+  status: string;
+  userId: string;
+  userLabel: string;
+}
+
+type WorkspaceTab = "assignments" | "outbreaks";
+
 const INITIAL_FORM_STATE: OutbreakFormState = {
   description: "",
   endDate: "",
@@ -53,6 +67,10 @@ function getUserDisplayName(user: UserListItem) {
   return fullName || user.username;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
 function readNullableString(value: NullableStringValue | undefined, fallback = "-") {
   if (!value?.Valid) {
     return fallback;
@@ -60,6 +78,38 @@ function readNullableString(value: NullableStringValue | undefined, fallback = "
 
   const trimmed = value.String.trim();
   return trimmed || fallback;
+}
+
+function readUnknownString(value: unknown, fallback = "-"): string {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed || fallback;
+  }
+
+  if (typeof value === "number" || typeof value === "boolean") {
+    return String(value);
+  }
+
+  if (isRecord(value)) {
+    if ("String" in value && typeof value.String === "string") {
+      const valid = "Valid" in value ? Boolean(value.Valid) : true;
+      return valid ? readUnknownString(value.String, fallback) : fallback;
+    }
+
+    if ("name" in value) {
+      return readUnknownString(value.name, fallback);
+    }
+
+    if ("username" in value) {
+      return readUnknownString(value.username, fallback);
+    }
+
+    if ("id" in value) {
+      return readUnknownString(value.id, fallback);
+    }
+  }
+
+  return fallback;
 }
 
 function toNullableDate(value: NullableTimeValue | undefined) {
@@ -102,6 +152,103 @@ function toDateInputValue(value: NullableTimeValue | undefined) {
   }
 
   return parsed.toISOString().slice(0, 10);
+}
+
+function formatUnknownDate(value: unknown) {
+  if (isRecord(value) && "Time" in value && typeof value.Time === "string") {
+    const valid = "Valid" in value ? Boolean(value.Valid) : true;
+
+    if (!valid) {
+      return "-";
+    }
+
+    return formatUnknownDate(value.Time);
+  }
+
+  if (typeof value === "string") {
+    const parsed = new Date(value);
+
+    if (Number.isNaN(parsed.getTime())) {
+      return readUnknownString(value, "-");
+    }
+
+    return new Intl.DateTimeFormat("en-UG", {
+      dateStyle: "medium",
+      timeStyle: "short"
+    }).format(parsed);
+  }
+
+  return readUnknownString(value, "-");
+}
+
+function getRecordValue(record: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    if (key in record) {
+      return record[key];
+    }
+  }
+
+  return undefined;
+}
+
+function toAssignmentRow(item: OutbreakAssignmentRecord, index: number): AssignmentListRow {
+  if (!isRecord(item)) {
+    return {
+      assignedAt: "-",
+      id: `assignment-${index}`,
+      outbreakId: "-",
+      outbreakName: "-",
+      status: "-",
+      userId: "-",
+      userLabel: "-"
+    };
+  }
+
+  const outbreakRef = getRecordValue(item, ["outbreak", "outbreak_ref"]);
+  const userRef = getRecordValue(item, ["user", "assignee"]);
+  const outbreakId = readUnknownString(
+    getRecordValue(item, ["outbreak_id", "outbreakId", "outbreak_id_fk"]) ??
+      (isRecord(outbreakRef) ? getRecordValue(outbreakRef, ["id"]) : undefined),
+    "-"
+  );
+  const userId = readUnknownString(
+    getRecordValue(item, ["user_id", "userId", "assigned_user_id"]) ??
+      (isRecord(userRef) ? getRecordValue(userRef, ["id"]) : undefined),
+    "-"
+  );
+  const id = readUnknownString(
+    getRecordValue(item, ["id"]),
+    `${outbreakId}-${userId}-${index}`
+  );
+  const outbreakName = readUnknownString(
+    getRecordValue(item, ["outbreak_name", "outbreakName", "outbreak_title"]) ??
+      (isRecord(outbreakRef) ? getRecordValue(outbreakRef, ["name", "title"]) : undefined),
+    "-"
+  );
+  const userLabel = readUnknownString(
+    getRecordValue(item, ["user_name", "username", "user_email"]) ??
+      (isRecord(userRef)
+        ? getRecordValue(userRef, ["name", "username", "email"])
+        : undefined),
+    "-"
+  );
+  const assignedAt = formatUnknownDate(
+    getRecordValue(item, ["assigned_at", "assignedAt", "created_at", "timestamp"])
+  );
+  const status = readUnknownString(
+    getRecordValue(item, ["status", "assignment_status", "state"]),
+    "-"
+  );
+
+  return {
+    assignedAt,
+    id,
+    outbreakId,
+    outbreakName,
+    status,
+    userId,
+    userLabel
+  };
 }
 
 function createFormStateFromOutbreak(outbreak: OutbreakRecord): OutbreakFormState {
@@ -165,7 +312,10 @@ function getLatestStartDate(outbreaks: OutbreakRecord[]) {
 }
 
 export function OutbreakWorkspace() {
+  const [activeTab, setActiveTab] = useState<WorkspaceTab>("outbreaks");
+  const isAssignmentsTab = activeTab === "assignments";
   const outbreaksQuery = useOutbreaks();
+  const assignmentsQuery = useOutbreakAssignments(isAssignmentsTab);
   const createMutation = useCreateOutbreak();
   const updateMutation = useUpdateOutbreak();
   const assignMutation = useAssignOutbreak();
@@ -211,6 +361,12 @@ export function OutbreakWorkspace() {
       : outbreaksQuery.error
         ? "The outbreak list could not be loaded."
         : null;
+  const assignmentsLoadError =
+    assignmentsQuery.error instanceof OutbreakRequestError
+      ? assignmentsQuery.error.message
+      : assignmentsQuery.error
+        ? "The outbreak assignments could not be loaded."
+        : null;
   const createError =
     createMutation.error instanceof OutbreakRequestError
       ? createMutation.error.message
@@ -248,6 +404,17 @@ export function OutbreakWorkspace() {
       ),
     [assignableUsersQuery.data?.users]
   );
+  const assignmentRows = useMemo(
+    () => (assignmentsQuery.data ?? []).map((item, index) => toAssignmentRow(item, index)),
+    [assignmentsQuery.data]
+  );
+  const assignmentOutbreakCount = new Set(
+    assignmentRows.map((row) => row.outbreakId).filter((value) => value && value !== "-")
+  ).size;
+  const assignmentUserCount = new Set(
+    assignmentRows.map((row) => row.userId).filter((value) => value && value !== "-")
+  ).size;
+  const currentLoadError = isAssignmentsTab ? assignmentsLoadError : loadError;
 
   useEffect(() => {
     function handleDocumentClick(event: MouseEvent) {
@@ -291,6 +458,18 @@ export function OutbreakWorkspace() {
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [assignMutation, createMutation, deleteMutation, updateMutation]);
+
+  useEffect(() => {
+    setOpenMenuOutbreakId(null);
+
+    if (activeTab === "assignments") {
+      setDetailsOutbreak(null);
+      setIsModalOpen(false);
+      setIsEditModalOpen(false);
+      setIsAssignModalOpen(false);
+      setDeleteTargetOutbreak(null);
+    }
+  }, [activeTab]);
 
   function openModal() {
     setIsModalOpen(true);
@@ -512,145 +691,247 @@ export function OutbreakWorkspace() {
     <section className={styles.workspace}>
       <div className={styles.toolbar}>
         <div className={styles.toolbarMeta}>
-          <div className={styles.endpointLabel}>Live source: GET /api/outbreaks</div>
+          <div className={styles.endpointLabel}>
+            {isAssignmentsTab
+              ? "Live source: GET /api/outbreaks/assignments"
+              : "Live source: GET /api/outbreaks"}
+          </div>
           <div className={styles.toolbarStatus}>
-            {outbreaksQuery.isFetching ? "Refreshing outbreak list..." : "Showing latest outbreak list."}
+            {isAssignmentsTab
+              ? assignmentsQuery.isFetching
+                ? "Refreshing assignments..."
+                : "Showing latest outbreak assignments."
+              : outbreaksQuery.isFetching
+                ? "Refreshing outbreak list..."
+                : "Showing latest outbreak list."}
           </div>
         </div>
         <div className={styles.toolbarActions}>
           <button
             className={styles.secondaryButton}
-            disabled={outbreaksQuery.isFetching}
-            onClick={() => outbreaksQuery.refetch()}
+            disabled={isAssignmentsTab ? assignmentsQuery.isFetching : outbreaksQuery.isFetching}
+            onClick={() =>
+              isAssignmentsTab ? assignmentsQuery.refetch() : outbreaksQuery.refetch()
+            }
             type="button"
           >
-            {outbreaksQuery.isFetching ? "Refreshing..." : "Refresh"}
+            {isAssignmentsTab
+              ? assignmentsQuery.isFetching
+                ? "Refreshing..."
+                : "Refresh Assignments"
+              : outbreaksQuery.isFetching
+                ? "Refreshing..."
+                : "Refresh"}
           </button>
-          <button className={styles.primaryButton} onClick={openModal} type="button">
-            Add Outbreak
-          </button>
+          {!isAssignmentsTab ? (
+            <button className={styles.primaryButton} onClick={openModal} type="button">
+              Add Outbreak
+            </button>
+          ) : null}
         </div>
       </div>
 
-      {loadError ? <div className={styles.errorBanner}>{loadError}</div> : null}
-
-      <div className={styles.summaryGrid}>
-        <article className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Total outbreaks</div>
-          <div className={styles.summaryValue}>{outbreaks.length}</div>
-        </article>
-        <article className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Active</div>
-          <div className={styles.summaryValue}>{activeCount}</div>
-        </article>
-        <article className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Closed</div>
-          <div className={styles.summaryValue}>{closedCount}</div>
-        </article>
-        <article className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Latest start</div>
-          <div className={styles.summaryValue}>{getLatestStartDate(outbreaks)}</div>
-          <div className={styles.summaryNote}>{diseaseTypeCount} outbreak types in list</div>
-        </article>
+      <div className={styles.tabBar}>
+        <button
+          className={`${styles.tabButton} ${!isAssignmentsTab ? styles.tabButtonActive : ""}`}
+          onClick={() => setActiveTab("outbreaks")}
+          type="button"
+        >
+          Outbreaks
+        </button>
+        <button
+          className={`${styles.tabButton} ${isAssignmentsTab ? styles.tabButtonActive : ""}`}
+          onClick={() => setActiveTab("assignments")}
+          type="button"
+        >
+          Assignments
+        </button>
       </div>
 
-      <div className={styles.tableWrap}>
-        {outbreaksQuery.isLoading ? (
-          <div className={styles.stateMessage}>Loading outbreaks...</div>
-        ) : null}
+      {currentLoadError ? <div className={styles.errorBanner}>{currentLoadError}</div> : null}
 
-        {!outbreaksQuery.isLoading && !outbreaks.length ? (
-          <div className={styles.stateMessage}>No outbreaks available right now.</div>
-        ) : null}
+      {!isAssignmentsTab ? (
+        <>
+          <div className={styles.summaryGrid}>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Total outbreaks</div>
+              <div className={styles.summaryValue}>{outbreaks.length}</div>
+            </article>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Active</div>
+              <div className={styles.summaryValue}>{activeCount}</div>
+            </article>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Closed</div>
+              <div className={styles.summaryValue}>{closedCount}</div>
+            </article>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Latest start</div>
+              <div className={styles.summaryValue}>{getLatestStartDate(outbreaks)}</div>
+              <div className={styles.summaryNote}>{diseaseTypeCount} outbreak types in list</div>
+            </article>
+          </div>
 
-        {!outbreaksQuery.isLoading && outbreaks.length ? (
-          <table className={styles.table}>
-            <thead>
-              <tr>
-                <th scope="col">ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Category</th>
-                <th scope="col">Type</th>
-                <th scope="col">Status</th>
-                <th scope="col">Start Date</th>
-                <th scope="col">End Date</th>
-                <th scope="col">Description</th>
-                <th scope="col">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {outbreaks.map((outbreak) => (
-                <tr key={outbreak.id}>
-                  <td>{outbreak.id}</td>
-                  <td>{readNullableString(outbreak.name)}</td>
-                  <td>{readNullableString(outbreak.outbreak_category).toUpperCase()}</td>
-                  <td>{readNullableString(outbreak.outbreak_type).toUpperCase()}</td>
-                  <td>{readNullableString(outbreak.status)}</td>
-                  <td>{formatNullableDate(outbreak.start_date)}</td>
-                  <td>{formatNullableDate(outbreak.end_date)}</td>
-                  <td>{readNullableString(outbreak.description)}</td>
-                  <td className={styles.actionsCell}>
-                    <div className={styles.actionsMenuWrap} data-actions-menu="">
-                      <button
-                        aria-expanded={openMenuOutbreakId === outbreak.id}
-                        aria-haspopup="menu"
-                        className={styles.moreButton}
-                        onClick={() =>
-                          setOpenMenuOutbreakId((current) =>
-                            current === outbreak.id ? null : outbreak.id
-                          )
-                        }
-                        type="button"
-                      >
-                        <span className={styles.moreDots} aria-hidden="true">
-                          <svg fill="currentColor" height="16" viewBox="0 0 20 20" width="16">
-                            <circle cx="10" cy="4.2" r="1.4" />
-                            <circle cx="10" cy="10" r="1.4" />
-                            <circle cx="10" cy="15.8" r="1.4" />
-                          </svg>
-                        </span>
-                      </button>
+          <div className={styles.tableWrap}>
+            {outbreaksQuery.isLoading ? (
+              <div className={styles.stateMessage}>Loading outbreaks...</div>
+            ) : null}
 
-                      {openMenuOutbreakId === outbreak.id ? (
-                        <div className={styles.dropdown} role="menu">
+            {!outbreaksQuery.isLoading && !outbreaks.length ? (
+              <div className={styles.stateMessage}>No outbreaks available right now.</div>
+            ) : null}
+
+            {!outbreaksQuery.isLoading && outbreaks.length ? (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Category</th>
+                    <th scope="col">Type</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Start Date</th>
+                    <th scope="col">End Date</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {outbreaks.map((outbreak) => (
+                    <tr key={outbreak.id}>
+                      <td>{outbreak.id}</td>
+                      <td>{readNullableString(outbreak.name)}</td>
+                      <td>{readNullableString(outbreak.outbreak_category).toUpperCase()}</td>
+                      <td>{readNullableString(outbreak.outbreak_type).toUpperCase()}</td>
+                      <td>{readNullableString(outbreak.status)}</td>
+                      <td>{formatNullableDate(outbreak.start_date)}</td>
+                      <td>{formatNullableDate(outbreak.end_date)}</td>
+                      <td>{readNullableString(outbreak.description)}</td>
+                      <td className={styles.actionsCell}>
+                        <div className={styles.actionsMenuWrap} data-actions-menu="">
                           <button
-                            className={styles.dropdownItem}
-                            onClick={() => openDetailsModal(outbreak)}
+                            aria-expanded={openMenuOutbreakId === outbreak.id}
+                            aria-haspopup="menu"
+                            className={styles.moreButton}
+                            onClick={() =>
+                              setOpenMenuOutbreakId((current) =>
+                                current === outbreak.id ? null : outbreak.id
+                              )
+                            }
                             type="button"
                           >
-                            View details
+                            <span className={styles.moreDots} aria-hidden="true">
+                              <svg fill="currentColor" height="16" viewBox="0 0 20 20" width="16">
+                                <circle cx="10" cy="4.2" r="1.4" />
+                                <circle cx="10" cy="10" r="1.4" />
+                                <circle cx="10" cy="15.8" r="1.4" />
+                              </svg>
+                            </span>
                           </button>
-                          <button
-                            className={styles.dropdownItem}
-                            onClick={() => openAssignModal(outbreak.id)}
-                            type="button"
-                          >
-                            Assign
-                          </button>
-                          <button
-                            className={styles.dropdownItem}
-                            onClick={() => openEditModal(outbreak)}
-                            type="button"
-                          >
-                            Edit outbreak
-                          </button>
-                          <button
-                            className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
-                            onClick={() => openDeleteModal(outbreak)}
-                            type="button"
-                          >
-                            Delete outbreak
-                          </button>
+
+                          {openMenuOutbreakId === outbreak.id ? (
+                            <div className={styles.dropdown} role="menu">
+                              <button
+                                className={styles.dropdownItem}
+                                onClick={() => openDetailsModal(outbreak)}
+                                type="button"
+                              >
+                                View details
+                              </button>
+                              <button
+                                className={styles.dropdownItem}
+                                onClick={() => openAssignModal(outbreak.id)}
+                                type="button"
+                              >
+                                Assign
+                              </button>
+                              <button
+                                className={styles.dropdownItem}
+                                onClick={() => openEditModal(outbreak)}
+                                type="button"
+                              >
+                                Edit outbreak
+                              </button>
+                              <button
+                                className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
+                                onClick={() => openDeleteModal(outbreak)}
+                                type="button"
+                              >
+                                Delete outbreak
+                              </button>
+                            </div>
+                          ) : null}
                         </div>
-                      ) : null}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : null}
-      </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <>
+          <div className={styles.summaryGrid}>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Total assignments</div>
+              <div className={styles.summaryValue}>{assignmentRows.length}</div>
+            </article>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Assigned outbreaks</div>
+              <div className={styles.summaryValue}>{assignmentOutbreakCount}</div>
+            </article>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Assigned users</div>
+              <div className={styles.summaryValue}>{assignmentUserCount}</div>
+            </article>
+            <article className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Source endpoint</div>
+              <div className={styles.summaryValue}>Live</div>
+              <div className={styles.summaryNote}>/api/outbreaks/assignments</div>
+            </article>
+          </div>
+
+          <div className={styles.tableWrap}>
+            {assignmentsQuery.isLoading ? (
+              <div className={styles.stateMessage}>Loading outbreak assignments...</div>
+            ) : null}
+
+            {!assignmentsQuery.isLoading && !assignmentRows.length ? (
+              <div className={styles.stateMessage}>No outbreak assignments available right now.</div>
+            ) : null}
+
+            {!assignmentsQuery.isLoading && assignmentRows.length ? (
+              <table className={styles.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">Assignment ID</th>
+                    <th scope="col">Outbreak ID</th>
+                    <th scope="col">Outbreak</th>
+                    <th scope="col">User ID</th>
+                    <th scope="col">User</th>
+                    <th scope="col">Assigned At</th>
+                    <th scope="col">Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {assignmentRows.map((row) => (
+                    <tr key={row.id}>
+                      <td>{row.id}</td>
+                      <td>{row.outbreakId}</td>
+                      <td>{row.outbreakName}</td>
+                      <td>{row.userId}</td>
+                      <td>{row.userLabel}</td>
+                      <td>{row.assignedAt}</td>
+                      <td>{row.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : null}
+          </div>
+        </>
+      )}
 
       {isModalOpen ? (
         <div className={styles.modalBackdrop} onClick={closeModal} role="presentation">

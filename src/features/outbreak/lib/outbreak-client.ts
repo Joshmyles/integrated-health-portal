@@ -1,5 +1,6 @@
 import type {
   AssignOutbreakPayload,
+  OutbreakAssignmentRecord,
   CreateOutbreakPayload,
   OutbreakRecord,
   UpdateOutbreakPayload
@@ -61,6 +62,25 @@ export async function fetchOutbreaks() {
     Array.isArray((payload as { outbreaks?: unknown }).outbreaks)
   ) {
     return (payload as { outbreaks: OutbreakRecord[] }).outbreaks;
+  }
+
+  return [];
+}
+
+export async function fetchOutbreakAssignments() {
+  const payload = await requestJson<unknown>("/api/outbreaks/assignments");
+
+  if (Array.isArray(payload)) {
+    return payload as OutbreakAssignmentRecord[];
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "assignments" in payload &&
+    Array.isArray((payload as { assignments?: unknown }).assignments)
+  ) {
+    return (payload as { assignments: OutbreakAssignmentRecord[] }).assignments;
   }
 
   return [];
