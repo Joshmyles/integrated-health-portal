@@ -1,4 +1,5 @@
 import type {
+  RolesResponse,
   UpdateUserPayload,
   UserDetail,
   UserPermissionsResponse,
@@ -63,6 +64,10 @@ export function fetchUserDetail(userId: number) {
 
 export function fetchUserPermissions(userId: number) {
   return requestJson<UserPermissionsResponse>(`/api/users/${userId}/permissions`);
+}
+
+export function fetchRoles() {
+  return requestJson<RolesResponse>("/api/rbac/roles");
 }
 
 export function updateUser(userId: number, payload: UpdateUserPayload) {

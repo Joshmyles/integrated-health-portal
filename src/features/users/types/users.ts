@@ -43,4 +43,28 @@ export interface UserPermissionsResponse {
   permissions: UserPermission[];
 }
 
-export type UpdateUserPayload = Record<string, unknown>;
+export interface RoleSummary {
+  created_at: string;
+  description: string;
+  id: number;
+  is_active: boolean;
+  name: string;
+  permission_count: number;
+  updated_at: string;
+  user_count: number;
+}
+
+export interface RolesResponse {
+  roles: RoleSummary[];
+}
+
+export interface UpdateUserPayload {
+  department_id: number;
+  email: string;
+  first_name: string;
+  is_active: boolean;
+  is_locked: boolean;
+  last_name: string;
+  role_ids: number[];
+  username: string;
+}

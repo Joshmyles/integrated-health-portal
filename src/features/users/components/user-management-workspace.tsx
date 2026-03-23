@@ -1,12 +1,15 @@
 "use client";
 
+import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { useRoles } from "@/src/features/users/hooks/use-roles";
+import { useUpdateUser } from "@/src/features/users/hooks/use-update-user";
 import { useUserDetail } from "@/src/features/users/hooks/use-user-detail";
 import { useUserPermissions } from "@/src/features/users/hooks/use-user-permissions";
 import { useUsers } from "@/src/features/users/hooks/use-users";
-import { useUpdateUser } from "@/src/features/users/hooks/use-update-user";
 import { UsersRequestError } from "@/src/features/users/lib/users-client";
 import type {
+  RoleSummary,
   UpdateUserPayload,
   UserDetail,
   UserListItem
@@ -14,6 +17,7 @@ import type {
 import styles from "./user-management-workspace.module.css";
 
 const DEFAULT_PAGE_SIZE = 20;
+const ROLE_SEARCH_INPUT_ID = "user-management-role-search";
 const ZERO_DATE = "0001-01-01T00:00:00Z";
 
 type ModalType = "details" | "permissions" | "edit";
@@ -21,6 +25,17 @@ type ModalType = "details" | "permissions" | "edit";
 interface ActiveModal {
   type: ModalType;
   user: UserListItem;
+}
+
+interface EditFormState {
+  departmentId: string;
+  email: string;
+  firstName: string;
+  isActive: boolean;
+  isLocked: boolean;
+  lastName: string;
+  roleIds: number[];
+  username: string;
 }
 
 function formatDateTime(value: string) {
@@ -40,16 +55,31 @@ function formatDateTime(value: string) {
   }).format(date);
 }
 
-function buildUpdatePayload(user: UserDetail): UpdateUserPayload {
+function createEditFormState(user: UserDetail): EditFormState {
   return {
-    department_id: user.department_id,
+    departmentId: user.department_id > 0 ? String(user.department_id) : "",
     email: user.email,
-    first_name: user.first_name,
-    is_active: user.is_active,
-    is_locked: user.is_locked,
-    last_name: user.last_name,
-    role_ids: user.role_ids,
+    firstName: user.first_name,
+    isActive: user.is_active,
+    isLocked: user.is_locked,
+    lastName: user.last_name,
+    roleIds: [...user.role_ids],
     username: user.username
+  };
+}
+
+function buildUpdatePayload(formState: EditFormState): UpdateUserPayload {
+  const trimmedDepartmentId = formState.departmentId.trim();
+
+  return {
+    department_id: trimmedDepartmentId ? Number(trimmedDepartmentId) : 0,
+    email: formState.email.trim(),
+    first_name: formState.firstName.trim(),
+    is_active: formState.isActive,
+    is_locked: formState.isLocked,
+    last_name: formState.lastName.trim(),
+    role_ids: Array.from(new Set(formState.roleIds)),
+    username: formState.username.trim()
   };
 }
 
@@ -67,7 +97,7 @@ function getModalTitle(type: ModalType) {
     return "Effective Permissions";
   }
 
-  return "Edit User Payload";
+  return "Edit User";
 }
 
 function getModalSubtitle(type: ModalType) {
@@ -79,21 +109,54 @@ function getModalSubtitle(type: ModalType) {
     return "Permission list from GET /api/users/:id/permissions.";
   }
 
-  return "Send JSON updates to PUT /api/users/:id.";
+  return "Update account fields and assigned roles with PUT /api/users/:id.";
 }
 
 function getStatusTone(isPositive: boolean) {
   return isPositive ? styles.statusPositive : styles.statusMuted;
 }
 
+function roleMatchesSearch(role: RoleSummary, query: string) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return true;
+  }
+
+  return [role.name, role.description].some((value) =>
+    value.toLowerCase().includes(normalizedQuery)
+  );
+}
+
+function getRoleLabel(roleId: number, roles: RoleSummary[], detailUser?: UserDetail) {
+  const role = roles.find((item) => item.id === roleId);
+
+  if (role) {
+    return role.name;
+  }
+
+  if (detailUser) {
+    const roleIndex = detailUser.role_ids.findIndex((item) => item === roleId);
+
+    if (roleIndex >= 0) {
+      return detailUser.roles[roleIndex] ?? `Role #${roleId}`;
+    }
+  }
+
+  return `Role #${roleId}`;
+}
+
 export function UserManagementWorkspace() {
   const [page, setPage] = useState(1);
   const [openMenuUserId, setOpenMenuUserId] = useState<number | null>(null);
   const [activeModal, setActiveModal] = useState<ActiveModal | null>(null);
-  const [editorValue, setEditorValue] = useState("{}");
-  const [editorError, setEditorError] = useState<string | null>(null);
+  const [formState, setFormState] = useState<EditFormState | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isRolePickerOpen, setIsRolePickerOpen] = useState(false);
+  const [roleSearchValue, setRoleSearchValue] = useState("");
 
   const usersQuery = useUsers(page, DEFAULT_PAGE_SIZE);
+  const isEditModal = activeModal?.type === "edit";
   const detailUserId =
     activeModal && (activeModal.type === "details" || activeModal.type === "edit")
       ? activeModal.user.id
@@ -101,12 +164,21 @@ export function UserManagementWorkspace() {
   const permissionsUserId = activeModal?.type === "permissions" ? activeModal.user.id : null;
   const detailQuery = useUserDetail(detailUserId);
   const permissionsQuery = useUserPermissions(permissionsUserId);
+  const rolesQuery = useRoles(isEditModal);
   const updateMutation = useUpdateUser();
 
   const users = usersQuery.data?.users ?? [];
   const pagination = usersQuery.data?.pagination;
   const detailUser = detailQuery.data;
   const permissions = permissionsQuery.data?.permissions ?? [];
+  const roles = rolesQuery.data?.roles ?? [];
+  const filteredRoles = [...roles]
+    .filter((role) => roleMatchesSearch(role, roleSearchValue))
+    .sort((left, right) => left.name.localeCompare(right.name));
+  const selectedRoles = (formState?.roleIds ?? []).map((roleId) => ({
+    id: roleId,
+    label: getRoleLabel(roleId, roles, detailUser)
+  }));
   const activeUsersOnPage = users.filter((user) => user.is_active).length;
   const lockedUsersOnPage = users.filter((user) => user.is_locked).length;
   const updateError =
@@ -127,15 +199,29 @@ export function UserManagementWorkspace() {
       if (!target.closest("[data-actions-menu]")) {
         setOpenMenuUserId(null);
       }
+
+      if (!target.closest("[data-role-picker]")) {
+        setIsRolePickerOpen(false);
+      }
     }
 
     function handleKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpenMenuUserId(null);
-        setActiveModal(null);
-        setEditorError(null);
-        updateMutation.reset();
+      if (event.key !== "Escape") {
+        return;
       }
+
+      setOpenMenuUserId(null);
+
+      if (isRolePickerOpen) {
+        setIsRolePickerOpen(false);
+        return;
+      }
+
+      setActiveModal(null);
+      setFormState(null);
+      setFormError(null);
+      setRoleSearchValue("");
+      updateMutation.reset();
     }
 
     document.addEventListener("mousedown", handleDocumentClick);
@@ -145,59 +231,115 @@ export function UserManagementWorkspace() {
       document.removeEventListener("mousedown", handleDocumentClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [updateMutation]);
+  }, [isRolePickerOpen, updateMutation]);
 
   useEffect(() => {
     setOpenMenuUserId(null);
+    setIsRolePickerOpen(false);
   }, [page]);
 
   useEffect(() => {
-    if (activeModal?.type !== "edit" || !detailUser) {
+    if (!isEditModal || !detailUser) {
       return;
     }
 
-    setEditorValue(JSON.stringify(buildUpdatePayload(detailUser), null, 2));
-    setEditorError(null);
-  }, [activeModal, detailUser]);
+    setFormState(createEditFormState(detailUser));
+    setFormError(null);
+    setRoleSearchValue("");
+    setIsRolePickerOpen(false);
+  }, [detailUser, isEditModal]);
+
+  function clearEditFeedback() {
+    setFormError(null);
+
+    if (updateMutation.isError || updateMutation.isSuccess) {
+      updateMutation.reset();
+    }
+  }
+
+  function updateFormField<Key extends keyof EditFormState>(
+    field: Key,
+    value: EditFormState[Key]
+  ) {
+    setFormState((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        [field]: value
+      } as EditFormState;
+    });
+
+    clearEditFeedback();
+  }
+
+  function toggleRoleSelection(roleId: number) {
+    setFormState((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const isSelected = current.roleIds.includes(roleId);
+
+      return {
+        ...current,
+        roleIds: isSelected
+          ? current.roleIds.filter((currentRoleId) => currentRoleId !== roleId)
+          : [...current.roleIds, roleId]
+      };
+    });
+
+    clearEditFeedback();
+  }
 
   function openModal(type: ModalType, user: UserListItem) {
     setOpenMenuUserId(null);
-    setEditorError(null);
+    setFormError(null);
+    setRoleSearchValue("");
+    setIsRolePickerOpen(false);
     updateMutation.reset();
     setActiveModal({ type, user });
 
     if (type === "edit") {
-      setEditorValue("{}");
+      setFormState(null);
     }
   }
 
   function closeModal() {
     setActiveModal(null);
     setOpenMenuUserId(null);
-    setEditorError(null);
+    setFormState(null);
+    setFormError(null);
+    setRoleSearchValue("");
+    setIsRolePickerOpen(false);
     updateMutation.reset();
   }
 
-  async function handleSaveChanges() {
-    if (activeModal?.type !== "edit") {
+  async function handleSaveChanges(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (activeModal?.type !== "edit" || !formState) {
       return;
     }
 
-    setEditorError(null);
+    setFormError(null);
     updateMutation.reset();
 
-    let payload: UpdateUserPayload;
+    if (!formState.username.trim()) {
+      setFormError("Username is required before the user can be saved.");
+      return;
+    }
 
-    try {
-      payload = JSON.parse(editorValue) as UpdateUserPayload;
-    } catch {
-      setEditorError("The update payload must be valid JSON before it can be saved.");
+    if (formState.departmentId.trim() && !/^\d+$/.test(formState.departmentId.trim())) {
+      setFormError("Department ID must be blank or a whole number.");
       return;
     }
 
     try {
       await updateMutation.mutateAsync({
-        payload,
+        payload: buildUpdatePayload(formState),
         userId: activeModal.user.id
       });
     } catch {
@@ -205,14 +347,16 @@ export function UserManagementWorkspace() {
     }
   }
 
-  function handleResetPayload() {
+  function handleResetForm() {
     if (!detailUser) {
       return;
     }
 
     updateMutation.reset();
-    setEditorError(null);
-    setEditorValue(JSON.stringify(buildUpdatePayload(detailUser), null, 2));
+    setFormError(null);
+    setRoleSearchValue("");
+    setIsRolePickerOpen(false);
+    setFormState(createEditFormState(detailUser));
   }
 
   return (
@@ -247,8 +391,8 @@ export function UserManagementWorkspace() {
           <div>
             <h2 className={styles.panelTitle}>User Registry</h2>
             <p className={styles.panelCopy}>
-              The registry is now table-first. Details, permissions, and updates open from the
-              actions menu so the list can use the full workspace width.
+              The registry stays table-first, while details, permissions, and user editing open
+              from the actions menu so the list can keep the full workspace width.
             </p>
           </div>
           <div className={styles.paginationControls}>
@@ -311,9 +455,7 @@ export function UserManagementWorkspace() {
                     <td>{user.department_name || "Not assigned"}</td>
                     <td>
                       <div>{user.roles.length}</div>
-                      <div className={styles.rowSecondary}>
-                        {user.roles[0] ?? "No roles"}
-                      </div>
+                      <div className={styles.rowSecondary}>{user.roles[0] ?? "No roles"}</div>
                     </td>
                     <td>
                       <div className={styles.stateStack}>
@@ -371,7 +513,7 @@ export function UserManagementWorkspace() {
                               onClick={() => openModal("edit", user)}
                               type="button"
                             >
-                              Edit payload
+                              Edit user
                             </button>
                           </div>
                         ) : null}
@@ -531,7 +673,7 @@ export function UserManagementWorkspace() {
               {activeModal.type === "edit" ? (
                 <>
                   {detailQuery.isLoading ? (
-                    <p className={styles.statusMessage}>Loading current payload...</p>
+                    <p className={styles.statusMessage}>Loading current user settings...</p>
                   ) : null}
 
                   {detailQuery.isError ? (
@@ -542,46 +684,266 @@ export function UserManagementWorkspace() {
                     </p>
                   ) : null}
 
-                  <textarea
-                    className={styles.editor}
-                    disabled={detailQuery.isLoading || updateMutation.isPending}
-                    onChange={(event) => {
-                      setEditorValue(event.target.value);
-                      setEditorError(null);
-                      if (updateMutation.isError || updateMutation.isSuccess) {
-                        updateMutation.reset();
-                      }
-                    }}
-                    spellCheck={false}
-                    value={editorValue}
-                  />
+                  {formState ? (
+                    <form className={styles.formLayout} onSubmit={handleSaveChanges}>
+                      <div className={styles.formGrid}>
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel} htmlFor="edit-user-username">
+                            Username
+                          </label>
+                          <input
+                            className={styles.textInput}
+                            disabled={updateMutation.isPending}
+                            id="edit-user-username"
+                            onChange={(event) => updateFormField("username", event.target.value)}
+                            value={formState.username}
+                          />
+                        </div>
 
-                  {editorError ? <p className={styles.errorMessage}>{editorError}</p> : null}
-                  {updateError ? <p className={styles.errorMessage}>{updateError}</p> : null}
-                  {updateMutation.isSuccess ? (
-                    <p className={styles.successMessage}>
-                      User update accepted. The registry will refresh automatically.
-                    </p>
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel} htmlFor="edit-user-email">
+                            Email
+                          </label>
+                          <input
+                            className={styles.textInput}
+                            disabled={updateMutation.isPending}
+                            id="edit-user-email"
+                            onChange={(event) => updateFormField("email", event.target.value)}
+                            value={formState.email}
+                          />
+                        </div>
+
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel} htmlFor="edit-user-first-name">
+                            First name
+                          </label>
+                          <input
+                            className={styles.textInput}
+                            disabled={updateMutation.isPending}
+                            id="edit-user-first-name"
+                            onChange={(event) => updateFormField("firstName", event.target.value)}
+                            value={formState.firstName}
+                          />
+                        </div>
+
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel} htmlFor="edit-user-last-name">
+                            Last name
+                          </label>
+                          <input
+                            className={styles.textInput}
+                            disabled={updateMutation.isPending}
+                            id="edit-user-last-name"
+                            onChange={(event) => updateFormField("lastName", event.target.value)}
+                            value={formState.lastName}
+                          />
+                        </div>
+
+                        <div className={styles.fieldGroup}>
+                          <label className={styles.fieldLabel} htmlFor="edit-user-department-id">
+                            Department ID
+                          </label>
+                          <input
+                            className={styles.textInput}
+                            disabled={updateMutation.isPending}
+                            id="edit-user-department-id"
+                            inputMode="numeric"
+                            onChange={(event) => updateFormField("departmentId", event.target.value)}
+                            placeholder="0"
+                            value={formState.departmentId}
+                          />
+                          <p className={styles.fieldHint}>
+                            Leave blank to keep the user unassigned in the upstream system.
+                          </p>
+                        </div>
+
+                        <div className={`${styles.fieldGroup} ${styles.fieldSpanFull}`}>
+                          <span className={styles.fieldLabel}>Account flags</span>
+                          <div className={styles.checkGrid}>
+                            <label className={styles.checkCard}>
+                              <input
+                                checked={formState.isActive}
+                                disabled={updateMutation.isPending}
+                                onChange={(event) =>
+                                  updateFormField("isActive", event.target.checked)
+                                }
+                                type="checkbox"
+                              />
+                              <span>
+                                <span className={styles.checkCardTitle}>Account active</span>
+                                <span className={styles.checkCardCopy}>
+                                  Allows the user to sign in and use assigned modules.
+                                </span>
+                              </span>
+                            </label>
+
+                            <label className={styles.checkCard}>
+                              <input
+                                checked={formState.isLocked}
+                                disabled={updateMutation.isPending}
+                                onChange={(event) =>
+                                  updateFormField("isLocked", event.target.checked)
+                                }
+                                type="checkbox"
+                              />
+                              <span>
+                                <span className={styles.checkCardTitle}>Account locked</span>
+                                <span className={styles.checkCardCopy}>
+                                  Blocks access until an administrator unlocks the account.
+                                </span>
+                              </span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div className={`${styles.fieldGroup} ${styles.fieldSpanFull}`}>
+                          <label className={styles.fieldLabel} htmlFor={ROLE_SEARCH_INPUT_ID}>
+                            Roles
+                          </label>
+                          <p className={styles.fieldHint}>
+                            Search the live RBAC role registry and assign one or more roles.
+                          </p>
+
+                          <div className={styles.rolePicker} data-role-picker="">
+                            <div className={styles.comboBar}>
+                              <input
+                                aria-autocomplete="list"
+                                aria-expanded={isRolePickerOpen}
+                                className={styles.textInput}
+                                disabled={updateMutation.isPending}
+                                id={ROLE_SEARCH_INPUT_ID}
+                                onChange={(event) => {
+                                  setRoleSearchValue(event.target.value);
+                                  setIsRolePickerOpen(true);
+                                }}
+                                onFocus={() => setIsRolePickerOpen(true)}
+                                placeholder="Search roles by name or description"
+                                role="combobox"
+                                value={roleSearchValue}
+                              />
+                              <button
+                                aria-expanded={isRolePickerOpen}
+                                className={styles.secondaryButton}
+                                disabled={updateMutation.isPending}
+                                onClick={() => setIsRolePickerOpen((current) => !current)}
+                                type="button"
+                              >
+                                {isRolePickerOpen ? "Hide" : "Browse"}
+                              </button>
+                            </div>
+
+                            {selectedRoles.length ? (
+                              <div className={styles.selectedRoleWrap}>
+                                {selectedRoles.map((role) => (
+                                  <button
+                                    className={styles.selectedRoleToken}
+                                    key={role.id}
+                                    onClick={() => toggleRoleSelection(role.id)}
+                                    type="button"
+                                  >
+                                    <span>{role.label}</span>
+                                    <span aria-hidden="true" className={styles.selectedRoleDismiss}>
+                                      x
+                                    </span>
+                                  </button>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className={styles.fieldHintCompact}>No roles selected yet.</p>
+                            )}
+
+                            {rolesQuery.isLoading ? (
+                              <p className={styles.statusMessage}>Loading roles...</p>
+                            ) : null}
+
+                            {rolesQuery.isError ? (
+                              <p className={styles.errorMessage}>
+                                {rolesQuery.error instanceof UsersRequestError
+                                  ? rolesQuery.error.message
+                                  : "The role list could not be loaded."}
+                              </p>
+                            ) : null}
+
+                            {isRolePickerOpen && !rolesQuery.isLoading && !rolesQuery.isError ? (
+                              <div className={styles.roleDropdown} role="listbox">
+                                {filteredRoles.length ? (
+                                  filteredRoles.map((role) => {
+                                    const isSelected = formState.roleIds.includes(role.id);
+
+                                    return (
+                                      <label
+                                        className={`${styles.roleOption} ${
+                                          isSelected ? styles.roleOptionSelected : ""
+                                        }`}
+                                        key={role.id}
+                                      >
+                                        <input
+                                          checked={isSelected}
+                                          className={styles.roleOptionCheckbox}
+                                          onChange={() => toggleRoleSelection(role.id)}
+                                          type="checkbox"
+                                        />
+                                        <span className={styles.roleOptionBody}>
+                                          <span className={styles.roleOptionTopLine}>
+                                            <span className={styles.roleOptionName}>{role.name}</span>
+                                            <span
+                                              className={`${styles.statusPill} ${
+                                                role.is_active
+                                                  ? styles.statusPositive
+                                                  : styles.statusMuted
+                                              }`}
+                                            >
+                                              {role.is_active ? "Active" : "Inactive"}
+                                            </span>
+                                          </span>
+                                          <span className={styles.roleOptionDescription}>
+                                            {role.description || "No description supplied."}
+                                          </span>
+                                          <span className={styles.roleOptionStats}>
+                                            {role.permission_count} permissions | {role.user_count} users
+                                          </span>
+                                        </span>
+                                      </label>
+                                    );
+                                  })
+                                ) : (
+                                  <div className={styles.emptyDropdownState}>
+                                    No roles matched the current search.
+                                  </div>
+                                )}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+
+                      {formError ? <p className={styles.errorMessage}>{formError}</p> : null}
+                      {updateError ? <p className={styles.errorMessage}>{updateError}</p> : null}
+                      {updateMutation.isSuccess ? (
+                        <p className={styles.successMessage}>
+                          User update accepted. The registry will refresh automatically.
+                        </p>
+                      ) : null}
+
+                      <div className={styles.editorActions}>
+                        <button
+                          className={styles.primaryButton}
+                          disabled={detailQuery.isLoading || updateMutation.isPending}
+                          type="submit"
+                        >
+                          {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                        </button>
+                        <button
+                          className={styles.secondaryButton}
+                          disabled={detailQuery.isLoading || updateMutation.isPending}
+                          onClick={handleResetForm}
+                          type="button"
+                        >
+                          Reset
+                        </button>
+                      </div>
+                    </form>
                   ) : null}
-
-                  <div className={styles.editorActions}>
-                    <button
-                      className={styles.primaryButton}
-                      disabled={detailQuery.isLoading || updateMutation.isPending}
-                      onClick={handleSaveChanges}
-                      type="button"
-                    >
-                      {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                    </button>
-                    <button
-                      className={styles.secondaryButton}
-                      disabled={detailQuery.isLoading || updateMutation.isPending}
-                      onClick={handleResetPayload}
-                      type="button"
-                    >
-                      Reset
-                    </button>
-                  </div>
                 </>
               ) : null}
             </div>

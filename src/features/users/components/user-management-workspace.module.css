@@ -347,25 +347,206 @@
   line-height: 1.35;
 }
 
-.editor {
+.formLayout {
+  display: grid;
+  gap: 10px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 12px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldSpanFull {
+  grid-column: 1 / -1;
+}
+
+.fieldLabel {
+  color: #444444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fieldHint,
+.fieldHintCompact {
+  margin: 0;
+  color: #666666;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.fieldHintCompact {
+  margin-top: 6px;
+}
+
+.textInput {
   width: 100%;
-  min-height: min(44dvh, 360px);
+  min-height: 30px;
   border: 1px solid var(--legacy-border-dark);
   background: #ffffff;
   color: #111111;
-  font-family: "Courier New", Courier, monospace;
   font-size: 12px;
-  line-height: 1.45;
-  padding: 10px;
-  resize: vertical;
+  padding: 0 8px;
   box-shadow:
     inset 1px 1px 0 #d7d7d7,
     inset -1px -1px 0 #ffffff;
 }
 
-.editor:focus {
+.textInput:focus {
   outline: 1px solid var(--legacy-accent);
   outline-offset: 1px;
+}
+
+.checkGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.checkCard {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  border: 1px solid #c7c7c7;
+  background: linear-gradient(180deg, #fdfdfd 0%, #f2f2f2 100%);
+  padding: 8px 9px;
+}
+
+.checkCard input {
+  margin: 2px 0 0;
+}
+
+.checkCardTitle,
+.checkCardCopy {
+  display: block;
+}
+
+.checkCardTitle {
+  color: #111111;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.checkCardCopy {
+  margin-top: 2px;
+  color: #666666;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.rolePicker {
+  position: relative;
+}
+
+.comboBar {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.selectedRoleWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.selectedRoleToken {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #9eb1bd;
+  background: linear-gradient(180deg, #eef5f8 0%, #dde8ee 100%);
+  color: #16384a;
+  cursor: pointer;
+  padding: 3px 8px;
+  font-size: 11px;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c4d2da;
+}
+
+.selectedRoleDismiss {
+  font-weight: 700;
+}
+
+.roleDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 6;
+  max-height: min(36dvh, 320px);
+  overflow: auto;
+  border: 1px solid var(--legacy-border-dark);
+  background: #f9f9f9;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #d5d5d5,
+    0 12px 22px rgba(0, 0, 0, 0.16);
+}
+
+.roleOption {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr);
+  gap: 8px;
+  border-bottom: 1px solid #d6d6d6;
+  padding: 8px 9px;
+  cursor: pointer;
+}
+
+.roleOption:last-child {
+  border-bottom: none;
+}
+
+.roleOptionSelected {
+  background: #eaf3f7;
+}
+
+.roleOption:hover {
+  background: #f1f6f8;
+}
+
+.roleOptionCheckbox {
+  margin: 3px 0 0;
+}
+
+.roleOptionBody {
+  display: grid;
+  gap: 3px;
+}
+
+.roleOptionTopLine {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.roleOptionName {
+  color: #111111;
+  font-size: 12px;
+  font-weight: 700;
+  word-break: break-word;
+}
+
+.roleOptionDescription,
+.roleOptionStats,
+.emptyDropdownState {
+  color: #666666;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.emptyDropdownState {
+  padding: 9px;
 }
 
 .editorActions {
@@ -453,6 +634,11 @@
 
   .summaryGrid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .formGrid,
+  .checkGrid {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 
