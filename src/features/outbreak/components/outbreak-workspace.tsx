@@ -5,14 +5,16 @@ import { useEffect, useMemo, useState } from "react";
 import { useAssignOutbreak } from "@/src/features/outbreak/hooks/use-assign-outbreak";
 import { useAssignableUsers } from "@/src/features/outbreak/hooks/use-assignable-users";
 import { useCreateOutbreak } from "@/src/features/outbreak/hooks/use-create-outbreak";
+import { useDeleteOutbreak } from "@/src/features/outbreak/hooks/use-delete-outbreak";
+import { useUpdateOutbreak } from "@/src/features/outbreak/hooks/use-update-outbreak";
 import { useOutbreaks } from "@/src/features/outbreak/hooks/use-outbreaks";
 import { OutbreakRequestError } from "@/src/features/outbreak/lib/outbreak-client";
 import type {
   AssignOutbreakPayload,
-  CreateOutbreakPayload,
   NullableStringValue,
   NullableTimeValue,
-  OutbreakRecord
+  OutbreakRecord,
+  UpdateOutbreakPayload
 } from "@/src/features/outbreak/types/outbreak";
 import { UsersRequestError } from "@/src/features/users/lib/users-client";
 import type { UserListItem } from "@/src/features/users/types/users";
@@ -81,6 +83,56 @@ function formatNullableDate(value: NullableTimeValue | undefined) {
   }).format(date);
 }
 
+function toDateInputValue(value: NullableTimeValue | undefined) {
+  if (!value?.Valid) {
+    return "";
+  }
+
+  const rawValue = value.Time.trim();
+  const dateOnlyMatch = rawValue.match(/^(\d{4}-\d{2}-\d{2})/);
+
+  if (dateOnlyMatch?.[1]) {
+    return dateOnlyMatch[1];
+  }
+
+  const parsed = new Date(rawValue);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "";
+  }
+
+  return parsed.toISOString().slice(0, 10);
+}
+
+function createFormStateFromOutbreak(outbreak: OutbreakRecord): OutbreakFormState {
+  const outbreakType = readNullableString(outbreak.outbreak_type, "").trim();
+  const category = readNullableString(outbreak.outbreak_category, "").trim();
+
+  return {
+    description: readNullableString(outbreak.description, ""),
+    endDate: toDateInputValue(outbreak.end_date),
+    name: readNullableString(outbreak.name, ""),
+    outbreakCategory: category,
+    outbreakType: outbreakType || "vhf",
+    startDate: toDateInputValue(outbreak.start_date),
+    status: readNullableString(outbreak.status, "active")
+  };
+}
+
+function buildOutbreakPayload(formState: OutbreakFormState): UpdateOutbreakPayload {
+  const outbreakType = formState.outbreakType.trim();
+
+  return {
+    description: formState.description.trim(),
+    end_date: formState.endDate.trim(),
+    name: formState.name.trim(),
+    outbreak_category: formState.outbreakCategory.trim() || outbreakType,
+    outbreak_type: outbreakType,
+    start_date: formState.startDate.trim(),
+    status: formState.status.trim() || "active"
+  };
+}
+
 function createOutbreakSortValue(outbreak: OutbreakRecord) {
   return toNullableDate(outbreak.start_date)?.getTime() ?? 0;
 }
@@ -115,15 +167,22 @@ function getLatestStartDate(outbreaks: OutbreakRecord[]) {
 export function OutbreakWorkspace() {
   const outbreaksQuery = useOutbreaks();
   const createMutation = useCreateOutbreak();
+  const updateMutation = useUpdateOutbreak();
   const assignMutation = useAssignOutbreak();
+  const deleteMutation = useDeleteOutbreak();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const assignableUsersQuery = useAssignableUsers(isAssignModalOpen);
   const [openMenuOutbreakId, setOpenMenuOutbreakId] = useState<number | null>(null);
   const [detailsOutbreak, setDetailsOutbreak] = useState<OutbreakRecord | null>(null);
+  const [editTargetOutbreak, setEditTargetOutbreak] = useState<OutbreakRecord | null>(null);
+  const [deleteTargetOutbreak, setDeleteTargetOutbreak] = useState<OutbreakRecord | null>(null);
   const [assignOutbreakId, setAssignOutbreakId] = useState<number | null>(null);
   const [formState, setFormState] = useState<OutbreakFormState>(INITIAL_FORM_STATE);
   const [formError, setFormError] = useState<string | null>(null);
+  const [editFormState, setEditFormState] = useState<OutbreakFormState>(INITIAL_FORM_STATE);
+  const [editFormError, setEditFormError] = useState<string | null>(null);
   const [assignFormState, setAssignFormState] = useState<AssignFormState>(
     INITIAL_ASSIGN_FORM_STATE
   );
@@ -158,11 +217,23 @@ export function OutbreakWorkspace() {
       : createMutation.error
         ? "The outbreak could not be created."
         : null;
+  const updateError =
+    updateMutation.error instanceof OutbreakRequestError
+      ? updateMutation.error.message
+      : updateMutation.error
+        ? "The outbreak could not be updated."
+        : null;
   const assignError =
     assignMutation.error instanceof OutbreakRequestError
       ? assignMutation.error.message
       : assignMutation.error
         ? "The outbreak could not be assigned."
+        : null;
+  const deleteError =
+    deleteMutation.error instanceof OutbreakRequestError
+      ? deleteMutation.error.message
+      : deleteMutation.error
+        ? "The outbreak could not be deleted."
         : null;
   const assignableUsersLoadError =
     assignableUsersQuery.error instanceof UsersRequestError
@@ -198,12 +269,18 @@ export function OutbreakWorkspace() {
 
       setOpenMenuOutbreakId(null);
       setDetailsOutbreak(null);
+      setEditTargetOutbreak(null);
+      setDeleteTargetOutbreak(null);
       setIsModalOpen(false);
+      setIsEditModalOpen(false);
       setIsAssignModalOpen(false);
       setFormError(null);
+      setEditFormError(null);
       setAssignFormError(null);
       createMutation.reset();
+      updateMutation.reset();
       assignMutation.reset();
+      deleteMutation.reset();
     }
 
     document.addEventListener("mousedown", handleDocumentClick);
@@ -213,7 +290,7 @@ export function OutbreakWorkspace() {
       document.removeEventListener("mousedown", handleDocumentClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [assignMutation, createMutation]);
+  }, [assignMutation, createMutation, deleteMutation, updateMutation]);
 
   function openModal() {
     setIsModalOpen(true);
@@ -226,6 +303,23 @@ export function OutbreakWorkspace() {
     setIsModalOpen(false);
     setFormError(null);
     createMutation.reset();
+  }
+
+  function openEditModal(outbreak: OutbreakRecord) {
+    setOpenMenuOutbreakId(null);
+    setEditTargetOutbreak(outbreak);
+    setEditFormState(createFormStateFromOutbreak(outbreak));
+    setEditFormError(null);
+    updateMutation.reset();
+    setIsEditModalOpen(true);
+  }
+
+  function closeEditModal() {
+    setIsEditModalOpen(false);
+    setEditTargetOutbreak(null);
+    setEditFormState(INITIAL_FORM_STATE);
+    setEditFormError(null);
+    updateMutation.reset();
   }
 
   function openAssignModal(outbreakId: number) {
@@ -266,8 +360,39 @@ export function OutbreakWorkspace() {
     openAssignModal(outbreakId);
   }
 
+  function openEditFromDetails() {
+    if (!detailsOutbreak) {
+      return;
+    }
+
+    const outbreak = detailsOutbreak;
+    closeDetailsModal();
+    openEditModal(outbreak);
+  }
+
+  function openDeleteModal(outbreak: OutbreakRecord) {
+    setOpenMenuOutbreakId(null);
+    setDeleteTargetOutbreak(outbreak);
+    deleteMutation.reset();
+  }
+
+  function closeDeleteModal() {
+    setDeleteTargetOutbreak(null);
+    deleteMutation.reset();
+  }
+
   function updateField<Key extends keyof OutbreakFormState>(key: Key, value: OutbreakFormState[Key]) {
     setFormState((current) => ({
+      ...current,
+      [key]: value
+    }));
+  }
+
+  function updateEditField<Key extends keyof OutbreakFormState>(
+    key: Key,
+    value: OutbreakFormState[Key]
+  ) {
+    setEditFormState((current) => ({
       ...current,
       [key]: value
     }));
@@ -286,24 +411,12 @@ export function OutbreakWorkspace() {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    const name = formState.name.trim();
-    const outbreakType = formState.outbreakType.trim();
-    const startDate = formState.startDate.trim();
+    const payload = buildOutbreakPayload(formState);
 
-    if (!name || !outbreakType || !startDate) {
+    if (!payload.name || !payload.outbreak_type || !payload.start_date) {
       setFormError("Name, outbreak type, and start date are required.");
       return;
     }
-
-    const payload: CreateOutbreakPayload = {
-      description: formState.description.trim(),
-      end_date: formState.endDate.trim(),
-      name,
-      outbreak_category: formState.outbreakCategory.trim() || outbreakType,
-      outbreak_type: outbreakType,
-      start_date: startDate,
-      status: formState.status.trim() || "active"
-    };
 
     setFormError(null);
     createMutation.mutate(payload, {
@@ -311,6 +424,39 @@ export function OutbreakWorkspace() {
         closeModal();
       }
     });
+  }
+
+  function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (!editTargetOutbreak) {
+      setEditFormError("A valid outbreak must be selected before updating.");
+      return;
+    }
+
+    const payload = buildOutbreakPayload(editFormState);
+
+    if (!payload.name || !payload.outbreak_type || !payload.start_date) {
+      setEditFormError("Name, outbreak type, and start date are required.");
+      return;
+    }
+
+    setEditFormError(null);
+    updateMutation.mutate(
+      {
+        outbreakId: editTargetOutbreak.id,
+        payload
+      },
+      {
+        onSuccess: () => {
+          if (detailsOutbreak?.id === editTargetOutbreak.id) {
+            closeDetailsModal();
+          }
+
+          closeEditModal();
+        }
+      }
+    );
   }
 
   function handleAssignSubmit(event: FormEvent<HTMLFormElement>) {
@@ -338,6 +484,26 @@ export function OutbreakWorkspace() {
     assignMutation.mutate(payload, {
       onSuccess: () => {
         closeAssignModal();
+      }
+    });
+  }
+
+  function handleDeleteOutbreak() {
+    if (!deleteTargetOutbreak) {
+      return;
+    }
+
+    deleteMutation.mutate(deleteTargetOutbreak.id, {
+      onSuccess: () => {
+        if (detailsOutbreak?.id === deleteTargetOutbreak.id) {
+          closeDetailsModal();
+        }
+
+        if (editTargetOutbreak?.id === deleteTargetOutbreak.id) {
+          closeEditModal();
+        }
+
+        closeDeleteModal();
       }
     });
   }
@@ -460,6 +626,20 @@ export function OutbreakWorkspace() {
                             type="button"
                           >
                             Assign
+                          </button>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => openEditModal(outbreak)}
+                            type="button"
+                          >
+                            Edit outbreak
+                          </button>
+                          <button
+                            className={`${styles.dropdownItem} ${styles.dropdownItemDanger}`}
+                            onClick={() => openDeleteModal(outbreak)}
+                            type="button"
+                          >
+                            Delete outbreak
                           </button>
                         </div>
                       ) : null}
@@ -590,6 +770,126 @@ export function OutbreakWorkspace() {
         </div>
       ) : null}
 
+      {isEditModalOpen && editTargetOutbreak ? (
+        <div className={styles.modalBackdrop} onClick={closeEditModal} role="presentation">
+          <div
+            className={styles.modalWindow}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="edit-outbreak-modal-title"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <div className={styles.modalTitle} id="edit-outbreak-modal-title">
+                  Edit Outbreak
+                </div>
+                <div className={styles.modalSubtitle}>
+                  PUT /api/outbreaks/{editTargetOutbreak.id}
+                </div>
+              </div>
+              <button className={styles.modalCloseButton} onClick={closeEditModal} type="button">
+                Close
+              </button>
+            </div>
+
+            <form className={styles.form} onSubmit={handleEditSubmit}>
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Name</span>
+                <input
+                  className={styles.fieldInput}
+                  onChange={(event) => updateEditField("name", event.target.value)}
+                  required
+                  type="text"
+                  value={editFormState.name}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Outbreak Type</span>
+                <input
+                  className={styles.fieldInput}
+                  onChange={(event) => updateEditField("outbreakType", event.target.value)}
+                  placeholder="vhf"
+                  required
+                  type="text"
+                  value={editFormState.outbreakType}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Outbreak Category</span>
+                <input
+                  className={styles.fieldInput}
+                  onChange={(event) => updateEditField("outbreakCategory", event.target.value)}
+                  placeholder="vhf"
+                  type="text"
+                  value={editFormState.outbreakCategory}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Status</span>
+                <input
+                  className={styles.fieldInput}
+                  onChange={(event) => updateEditField("status", event.target.value)}
+                  placeholder="active"
+                  type="text"
+                  value={editFormState.status}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>Start Date</span>
+                <input
+                  className={styles.fieldInput}
+                  onChange={(event) => updateEditField("startDate", event.target.value)}
+                  required
+                  type="date"
+                  value={editFormState.startDate}
+                />
+              </label>
+
+              <label className={styles.field}>
+                <span className={styles.fieldLabel}>End Date</span>
+                <input
+                  className={styles.fieldInput}
+                  onChange={(event) => updateEditField("endDate", event.target.value)}
+                  type="date"
+                  value={editFormState.endDate}
+                />
+              </label>
+
+              <label className={styles.fieldWide}>
+                <span className={styles.fieldLabel}>Description</span>
+                <textarea
+                  className={styles.fieldTextArea}
+                  onChange={(event) => updateEditField("description", event.target.value)}
+                  rows={4}
+                  value={editFormState.description}
+                />
+              </label>
+
+              {editFormError ? <div className={styles.errorText}>{editFormError}</div> : null}
+              {updateError ? <div className={styles.errorText}>{updateError}</div> : null}
+
+              <div className={styles.formActions}>
+                <button className={styles.secondaryButton} onClick={closeEditModal} type="button">
+                  Cancel
+                </button>
+                <button
+                  className={styles.primaryButton}
+                  disabled={updateMutation.isPending}
+                  type="submit"
+                >
+                  {updateMutation.isPending ? "Updating..." : "Update Outbreak"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
       {detailsOutbreak ? (
         <div className={styles.modalBackdrop} onClick={closeDetailsModal} role="presentation">
           <div
@@ -653,6 +953,9 @@ export function OutbreakWorkspace() {
             <div className={styles.formActions}>
               <button className={styles.secondaryButton} onClick={closeDetailsModal} type="button">
                 Close
+              </button>
+              <button className={styles.primaryButton} onClick={openEditFromDetails} type="button">
+                Edit Outbreak
               </button>
               <button className={styles.primaryButton} onClick={openAssignFromDetails} type="button">
                 Assign Outbreak
@@ -736,6 +1039,56 @@ export function OutbreakWorkspace() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTargetOutbreak ? (
+        <div className={styles.modalBackdrop} onClick={closeDeleteModal} role="presentation">
+          <div
+            className={styles.modalWindow}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-outbreak-modal-title"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <div className={styles.modalTitle} id="delete-outbreak-modal-title">
+                  Delete Outbreak
+                </div>
+                <div className={styles.modalSubtitle}>
+                  DELETE /api/outbreaks/{deleteTargetOutbreak.id}
+                </div>
+              </div>
+              <button className={styles.modalCloseButton} onClick={closeDeleteModal} type="button">
+                Close
+              </button>
+            </div>
+
+            <div className={styles.modalBody}>
+              <p className={styles.warningCopy}>
+                This action will permanently remove outbreak #{deleteTargetOutbreak.id}
+                {` (${readNullableString(deleteTargetOutbreak.name)})`}.
+              </p>
+              <p className={styles.warningCopy}>Are you sure you want to continue?</p>
+
+              {deleteError ? <div className={styles.errorText}>{deleteError}</div> : null}
+            </div>
+
+            <div className={styles.formActions}>
+              <button className={styles.secondaryButton} onClick={closeDeleteModal} type="button">
+                Cancel
+              </button>
+              <button
+                className={styles.dangerButton}
+                disabled={deleteMutation.isPending}
+                onClick={handleDeleteOutbreak}
+                type="button"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete outbreak"}
+              </button>
+            </div>
           </div>
         </div>
       ) : null}

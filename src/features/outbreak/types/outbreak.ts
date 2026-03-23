@@ -29,6 +29,8 @@ export interface CreateOutbreakPayload {
   status: string;
 }
 
+export type UpdateOutbreakPayload = CreateOutbreakPayload;
+
 export interface AssignOutbreakPayload {
   outbreak_id: number;
   user_id: number;

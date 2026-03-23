@@ -205,6 +205,12 @@
   margin-bottom: 0;
 }
 
+.dropdownItemDanger {
+  border-color: #b17676;
+  background: linear-gradient(180deg, #fff5f5 0%, #f8e5e5 100%);
+  color: #812d2d;
+}
+
 .detailsGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -340,10 +346,42 @@
   font-size: 11px;
 }
 
+.modalBody {
+  padding: 12px;
+}
+
+.warningCopy {
+  margin: 0 0 8px;
+  color: #222222;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.warningCopy:last-child {
+  margin-bottom: 0;
+}
+
 .errorText {
   grid-column: 1 / -1;
   color: #8f2f2f;
   font-size: 11px;
+}
+
+.dangerButton {
+  border: 1px solid #b17676;
+  background: linear-gradient(180deg, #fff5f5 0%, #f8e5e5 100%);
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #e7c9c9;
+  color: #812d2d;
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+.dangerButton:disabled {
+  cursor: wait;
+  color: #9a6d6d;
 }
 
 .formActions {

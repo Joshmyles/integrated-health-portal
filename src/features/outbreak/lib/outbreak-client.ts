@@ -1,7 +1,8 @@
 import type {
   AssignOutbreakPayload,
   CreateOutbreakPayload,
-  OutbreakRecord
+  OutbreakRecord,
+  UpdateOutbreakPayload
 } from "@/src/features/outbreak/types/outbreak";
 
 interface ErrorPayload {
@@ -78,6 +79,22 @@ export function createOutbreak(payload: CreateOutbreakPayload) {
 export function assignOutbreak(payload: AssignOutbreakPayload) {
   return requestJson<unknown>("/api/outbreaks/assign", {
     method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  });
+}
+
+export function deleteOutbreak(outbreakId: number) {
+  return requestJson<unknown>(`/api/outbreaks/${outbreakId}`, {
+    method: "DELETE"
+  });
+}
+
+export function updateOutbreak(outbreakId: number, payload: UpdateOutbreakPayload) {
+  return requestJson<unknown>(`/api/outbreaks/${outbreakId}`, {
+    method: "PUT",
     headers: {
       "Content-Type": "application/json"
     },
