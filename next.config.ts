@@ -1,10 +1,20 @@
 import type { NextConfig } from "next";
+import {
+  PHASE_DEVELOPMENT_SERVER,
+  PHASE_PRODUCTION_BUILD,
+  PHASE_PRODUCTION_SERVER
+} from "next/constants";
 
-const nextConfig: NextConfig = {
-  reactStrictMode: true,
-  experimental: {
-    webpackBuildWorker: false
-  }
-};
+export default function nextConfig(phase: string): NextConfig {
+  const isDevelopmentServer = phase === PHASE_DEVELOPMENT_SERVER;
+  const isProductionRuntime =
+    phase === PHASE_PRODUCTION_BUILD || phase === PHASE_PRODUCTION_SERVER;
 
-export default nextConfig;
+  return {
+    distDir: isDevelopmentServer ? ".next-dev" : isProductionRuntime ? ".next" : ".next",
+    reactStrictMode: true,
+    experimental: {
+      webpackBuildWorker: false
+    }
+  };
+}

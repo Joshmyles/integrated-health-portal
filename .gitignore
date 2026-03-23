@@ -4,6 +4,7 @@ Generate a .gitignore file for a next.js project:
 node_modules/
 # Build output
 .next/
+.next-dev/
 out/
 # Logslogs/
 *.log

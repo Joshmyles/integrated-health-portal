@@ -179,7 +179,7 @@ const portalContentById: Record<string, PortalPageContent> = {
         items: [
           "SOLID: responsibilities are split across data, hooks, and presentation components.",
           "KISS: only navigation, content retrieval, and legacy shell behavior are implemented.",
-          "YAGNI: no auth, charts, or back-office workflows are added until they are truly needed."
+          "YAGNI: the shell stays focused on core navigation and reporting even with lightweight access control in place."
         ]
       }
     ]

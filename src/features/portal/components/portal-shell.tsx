@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useLogout } from "@/src/features/auth/hooks/use-logout";
+import { AuthRequestError } from "@/src/features/auth/lib/auth-client";
 import { ContentPanel } from "@/src/features/portal/components/content-panel";
 import { NavigationTree } from "@/src/features/portal/components/navigation-tree";
 import { usePortalContent } from "@/src/features/portal/hooks/use-portal-content";
@@ -11,11 +13,23 @@ import styles from "./portal-shell.module.css";
 
 const FALLBACK_NODE_ID = "home";
 
-export function PortalShell() {
+interface PortalShellProps {
+  username: string;
+}
+
+export function PortalShell({ username }: PortalShellProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [isRoutingOut, startLogoutTransition] = useTransition();
+  const logoutMutation = useLogout();
+  const logoutError =
+    logoutMutation.error instanceof AuthRequestError
+      ? logoutMutation.error.message
+      : logoutMutation.error
+        ? "The session could not be closed cleanly. Please try again."
+        : null;
 
   const selectedNodeId = searchParams.get("node") ?? FALLBACK_NODE_ID;
 
@@ -82,12 +96,70 @@ export function PortalShell() {
     );
   }
 
+  async function handleLogout() {
+    logoutMutation.reset();
+
+    try {
+      await logoutMutation.mutateAsync();
+      startLogoutTransition(() => {
+        router.replace("/login");
+        router.refresh();
+      });
+    } catch {
+      return;
+    }
+  }
+
   return (
     <main className={styles.pageFrame}>
       <section className={styles.desktopWindow}>
         <header className={styles.titleBar}>
-          <span>{navigationQuery.data?.applicationTitle ?? "MoH Uganda: National Health Portal - Main"}</span>
+          <span className={styles.titleBarTitle}>
+            {navigationQuery.data?.applicationTitle ?? "MoH Uganda: National Health Portal - Main"}
+          </span>
+          <div className={styles.titleBarMeta}>
+            <span className={styles.sessionLabel}>Signed in as {username}</span>
+            <button
+              className={styles.logoutButton}
+              disabled={logoutMutation.isPending || isRoutingOut}
+              onClick={handleLogout}
+              type="button"
+            >
+              <span className={styles.logoutIcon} aria-hidden="true">
+                <svg fill="none" height="16" viewBox="0 0 20 20" width="16">
+                  <path
+                    d="M8 4.5H4.8A1.8 1.8 0 0 0 3 6.3v7.4a1.8 1.8 0 0 0 1.8 1.8H8"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.4"
+                  />
+                  <path
+                    d="M11 6.2 15 10l-4 3.8"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="1.4"
+                  />
+                  <path
+                    d="M7 10h8"
+                    stroke="currentColor"
+                    strokeLinecap="round"
+                    strokeWidth="1.4"
+                  />
+                </svg>
+              </span>
+              <span className={styles.logoutCopy}>
+                <span className={styles.logoutLabel}>
+                  {logoutMutation.isPending || isRoutingOut ? "Signing out..." : "Log out"}
+                </span>
+                <span className={styles.logoutMeta}>Local + response session</span>
+              </span>
+            </button>
+          </div>
         </header>
+
+        {logoutError ? <div className={styles.sessionErrorBanner}>{logoutError}</div> : null}
 
         <div className={styles.workspace}>
           <aside className={styles.sidebar}>
