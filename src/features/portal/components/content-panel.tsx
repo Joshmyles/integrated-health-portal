@@ -53,7 +53,11 @@ export function ContentPanel({
             </dl>
           ) : null}
 
-          {!isHome && !isUserManagement && !isCifVhf && content.summaryCards?.length ? (
+          {!isHome &&
+          !isUserManagement &&
+          !isCifVhf &&
+          !isOutbreakWorkspace &&
+          content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -68,7 +72,11 @@ export function ContentPanel({
             </section>
           ) : null}
 
-          {!isHome && !isUserManagement && !isCifVhf && content.dataTable ? (
+          {!isHome &&
+          !isUserManagement &&
+          !isCifVhf &&
+          !isOutbreakWorkspace &&
+          content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
               {content.dataTable.caption ? (

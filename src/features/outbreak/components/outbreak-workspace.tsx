@@ -119,6 +119,8 @@ export function OutbreakWorkspace() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const assignableUsersQuery = useAssignableUsers(isAssignModalOpen);
+  const [openMenuOutbreakId, setOpenMenuOutbreakId] = useState<number | null>(null);
+  const [detailsOutbreak, setDetailsOutbreak] = useState<OutbreakRecord | null>(null);
   const [assignOutbreakId, setAssignOutbreakId] = useState<number | null>(null);
   const [formState, setFormState] = useState<OutbreakFormState>(INITIAL_FORM_STATE);
   const [formError, setFormError] = useState<string | null>(null);
@@ -177,11 +179,25 @@ export function OutbreakWorkspace() {
   );
 
   useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      if (!target.closest("[data-actions-menu]")) {
+        setOpenMenuOutbreakId(null);
+      }
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") {
         return;
       }
 
+      setOpenMenuOutbreakId(null);
+      setDetailsOutbreak(null);
       setIsModalOpen(false);
       setIsAssignModalOpen(false);
       setFormError(null);
@@ -190,9 +206,11 @@ export function OutbreakWorkspace() {
       assignMutation.reset();
     }
 
+    document.addEventListener("mousedown", handleDocumentClick);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [assignMutation, createMutation]);
@@ -211,6 +229,7 @@ export function OutbreakWorkspace() {
   }
 
   function openAssignModal(outbreakId: number) {
+    setOpenMenuOutbreakId(null);
     setIsAssignModalOpen(true);
     setAssignOutbreakId(outbreakId);
     setAssignFormState({
@@ -226,6 +245,25 @@ export function OutbreakWorkspace() {
     setAssignFormState(INITIAL_ASSIGN_FORM_STATE);
     setAssignFormError(null);
     assignMutation.reset();
+  }
+
+  function openDetailsModal(outbreak: OutbreakRecord) {
+    setOpenMenuOutbreakId(null);
+    setDetailsOutbreak(outbreak);
+  }
+
+  function closeDetailsModal() {
+    setDetailsOutbreak(null);
+  }
+
+  function openAssignFromDetails() {
+    if (!detailsOutbreak) {
+      return;
+    }
+
+    const outbreakId = detailsOutbreak.id;
+    closeDetailsModal();
+    openAssignModal(outbreakId);
   }
 
   function updateField<Key extends keyof OutbreakFormState>(key: Key, value: OutbreakFormState[Key]) {
@@ -371,7 +409,7 @@ export function OutbreakWorkspace() {
                 <th scope="col">Start Date</th>
                 <th scope="col">End Date</th>
                 <th scope="col">Description</th>
-                <th scope="col">Action</th>
+                <th scope="col">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -385,14 +423,47 @@ export function OutbreakWorkspace() {
                   <td>{formatNullableDate(outbreak.start_date)}</td>
                   <td>{formatNullableDate(outbreak.end_date)}</td>
                   <td>{readNullableString(outbreak.description)}</td>
-                  <td>
-                    <button
-                      className={styles.tableActionButton}
-                      onClick={() => openAssignModal(outbreak.id)}
-                      type="button"
-                    >
-                      Assign
-                    </button>
+                  <td className={styles.actionsCell}>
+                    <div className={styles.actionsMenuWrap} data-actions-menu="">
+                      <button
+                        aria-expanded={openMenuOutbreakId === outbreak.id}
+                        aria-haspopup="menu"
+                        className={styles.moreButton}
+                        onClick={() =>
+                          setOpenMenuOutbreakId((current) =>
+                            current === outbreak.id ? null : outbreak.id
+                          )
+                        }
+                        type="button"
+                      >
+                        <span className={styles.moreDots} aria-hidden="true">
+                          <svg fill="currentColor" height="16" viewBox="0 0 20 20" width="16">
+                            <circle cx="10" cy="4.2" r="1.4" />
+                            <circle cx="10" cy="10" r="1.4" />
+                            <circle cx="10" cy="15.8" r="1.4" />
+                          </svg>
+                        </span>
+                      </button>
+
+                      {openMenuOutbreakId === outbreak.id ? (
+                        <div className={styles.dropdown} role="menu">
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => openDetailsModal(outbreak)}
+                            type="button"
+                          >
+                            View details
+                          </button>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => openAssignModal(outbreak.id)}
+                            type="button"
+                          >
+                            Assign
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -515,6 +586,78 @@ export function OutbreakWorkspace() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      ) : null}
+
+      {detailsOutbreak ? (
+        <div className={styles.modalBackdrop} onClick={closeDetailsModal} role="presentation">
+          <div
+            className={styles.modalWindow}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="outbreak-details-modal-title"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <div className={styles.modalTitle} id="outbreak-details-modal-title">
+                  Outbreak Details
+                </div>
+                <div className={styles.modalSubtitle}>Outbreak #{detailsOutbreak.id}</div>
+              </div>
+              <button className={styles.modalCloseButton} onClick={closeDetailsModal} type="button">
+                Close
+              </button>
+            </div>
+
+            <div className={styles.detailsGrid}>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>Name</div>
+                <div className={styles.detailsValue}>{readNullableString(detailsOutbreak.name)}</div>
+              </div>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>Category</div>
+                <div className={styles.detailsValue}>
+                  {readNullableString(detailsOutbreak.outbreak_category).toUpperCase()}
+                </div>
+              </div>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>Type</div>
+                <div className={styles.detailsValue}>
+                  {readNullableString(detailsOutbreak.outbreak_type).toUpperCase()}
+                </div>
+              </div>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>Status</div>
+                <div className={styles.detailsValue}>{readNullableString(detailsOutbreak.status)}</div>
+              </div>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>Start Date</div>
+                <div className={styles.detailsValue}>
+                  {formatNullableDate(detailsOutbreak.start_date)}
+                </div>
+              </div>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>End Date</div>
+                <div className={styles.detailsValue}>{formatNullableDate(detailsOutbreak.end_date)}</div>
+              </div>
+              <div className={styles.detailsRow}>
+                <div className={styles.detailsLabel}>Description</div>
+                <div className={styles.detailsValue}>
+                  {readNullableString(detailsOutbreak.description)}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.formActions}>
+              <button className={styles.secondaryButton} onClick={closeDetailsModal} type="button">
+                Close
+              </button>
+              <button className={styles.primaryButton} onClick={openAssignFromDetails} type="button">
+                Assign Outbreak
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
