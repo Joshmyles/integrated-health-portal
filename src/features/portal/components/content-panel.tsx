@@ -118,6 +118,7 @@ export function ContentPanel({
             !isCifMpox &&
             !isDeploymentPillars &&
             !isDeploymentResources &&
+            !isDeploymentActivityLogs &&
             !isEmployeesPage &&
             !isRrtDeploymentsPage &&
             !isRrtTeamsPage &&
