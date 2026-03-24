@@ -10,6 +10,7 @@ import { SettingsWorkspace } from '@/src/features/settings/components/settings-w
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
 import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
 import { ResourcesWorkspace } from '@/src/features/resource-management/components/resources-workspace';
+import { ActivityLogsWorkspace } from '@/src/features/resource-management/components/activity-logs-workspace';
 import { RrtDeploymentsManagementWorkspace } from '@/src/features/portal/components/rrt-deployments-management-workspace';
 import { RrtTeamsManagementWorkspace } from '@/src/features/portal/components/rrt-teams-management-workspace';
 
@@ -34,6 +35,7 @@ export function ContentPanel({
   const isCifMpox = content?.id === 'cif-mpox';
   const isDeploymentPillars = content?.id === 'deployment-pillars';
   const isDeploymentResources = content?.id === 'deployment-resources';
+  const isDeploymentActivityLogs = content?.id === 'deployment-activity-logs';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
   const isDepartmentsPage = content?.id === 'departments';
@@ -169,6 +171,7 @@ export function ContentPanel({
           {isCifMpox ? <CifMpoxWorkspace /> : null}
           {isDeploymentPillars ? <PillarsWorkspace /> : null}
           {isDeploymentResources ? <ResourcesWorkspace /> : null}
+          {isDeploymentActivityLogs ? <ActivityLogsWorkspace /> : null}
           {isEmployeesPage && content.employeeDirectory?.length ? (
             <EmployeeManagementWorkspace
               employees={content.employeeDirectory}
