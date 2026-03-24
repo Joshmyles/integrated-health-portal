@@ -9,6 +9,10 @@ import {
   fetchDistricts,
   fetchVillages
 } from "@/src/features/portal/lib/districts";
+import {
+  fetchRrtTeamsPageData,
+  ResponseHealthApiError
+} from "@/src/features/portal/lib/rrt-teams";
 
 const portalTree: PortalTreeNode[] = [
   {
@@ -156,6 +160,7 @@ function createLeafPage(input: {
   dataTable?: PortalPageContent["dataTable"];
   employeeDirectory?: PortalPageContent["employeeDirectory"];
   summaryCards?: PortalPageContent["summaryCards"];
+  rrtTeams?: PortalPageContent["rrtTeams"];
 }): PortalPageContent {
   return {
     dataTable: input.dataTable,
@@ -168,6 +173,7 @@ function createLeafPage(input: {
       { label: "Refresh cadence", value: input.cadence },
       { label: "Responsible unit", value: input.owner }
     ],
+    rrtTeams: input.rrtTeams,
     sections: [
       { title: "Expected actions", items: input.actions },
       { title: "Validation checklist", items: input.checks }
@@ -1922,6 +1928,63 @@ export async function getPortalContent(nodeId: string) {
 
   if (nodeId === "employees") {
     return getEmployeesPage();
+  }
+
+  if (nodeId === "deployment-rrt-teams") {
+    try {
+      const { dataTable, summaryCards, teams } = await fetchRrtTeamsPageData();
+
+      return createLeafPage({
+        id: "deployment-rrt-teams",
+        title: "RRT Teams",
+        source: "/api/resource-management/rrt-teams",
+        cadence: "Live on request",
+        owner: "Rapid Response Coordination",
+        intro:
+          "The RRT teams file maintains the live team roster used by deployments, making it easier to keep dispatch records tied to valid and current response teams.",
+        dataTable,
+        rrtTeams: teams,
+        summaryCards,
+        actions: [
+          "Review team composition and readiness before assigning new deployments.",
+          "Create or update team records as staff availability changes.",
+          "Keep team names stable so deployment links remain reliable."
+        ],
+        checks: [
+          "Confirm lead, region, and current availability are complete.",
+          "Avoid duplicate team names that can break deployment mapping.",
+          "Review whether inactive teams are still attached to open deployments."
+        ]
+      });
+    } catch (error) {
+      const message =
+        error instanceof ResponseHealthApiError
+          ? error.message
+          : "RRT team data is temporarily unavailable from the upstream resource-management service.";
+
+      return {
+        ...createLeafPage({
+          id: "deployment-rrt-teams",
+          title: "RRT Teams",
+          source: "/api/resource-management/rrt-teams",
+          cadence: "Live on request",
+          owner: "Rapid Response Coordination",
+          intro:
+            "The RRT teams file maintains the live team roster used by deployments, making it easier to keep dispatch records tied to valid and current response teams.",
+          actions: [
+            "Retry the upstream request when the resource-management service becomes available.",
+            "Use the most recent verified export if an urgent lookup is needed.",
+            "Coordinate with the deployment team before publishing manual corrections."
+          ],
+          checks: [
+            "Confirm the endpoint is reachable.",
+            "Review whether authentication or network policy changed.",
+            "Validate any fallback team list before distribution."
+          ]
+        }),
+        message
+      };
+    }
   }
 
   if (nodeId === "human-resources") {
