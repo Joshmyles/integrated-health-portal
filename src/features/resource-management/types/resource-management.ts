@@ -84,6 +84,27 @@ export interface ResourceCategoryRecord {
   updated_at: string;
 }
 
+export interface ResourceCategoriesResponse {
+  resource_categories: ResourceCategoryRecord[];
+}
+
+export interface ResourceCategoryDetailResponse {
+  resource_category: ResourceCategoryRecord;
+}
+
+export interface ResourceCategoryMutationResponse {
+  id?: number;
+  message?: string;
+  resource_category?: ResourceCategoryRecord | null;
+}
+
+export interface ResourceCategoryWritePayload {
+  category_type: string;
+  description: string;
+  is_active: boolean;
+  name: string;
+}
+
 export interface ResourceRecord {
   category?: ResourceCategoryRecord;
   category_id: number;

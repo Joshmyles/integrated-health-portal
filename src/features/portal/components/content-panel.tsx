@@ -56,11 +56,11 @@ export function ContentPanel({
             <p className={styles.legacyMessage}>{content.message}</p>
           ) : null}
 
-          {!isHome ? (
+          {!isHome && !isDeploymentResources ? (
             <p className={styles.contentIntro}>{content.intro}</p>
           ) : null}
 
-          {!isHome && content.records.length ? (
+          {!isHome && !isDeploymentResources && content.records.length ? (
             <dl className={styles.metaList}>
               {content.records.map((record) => (
                 <div className={styles.metaRow} key={record.label}>
@@ -172,6 +172,7 @@ export function ContentPanel({
           !isUserManagement &&
           !isOutbreakWorkspace &&
           !isSettings &&
+          !isDeploymentResources &&
           !isEmployeesPage &&
           !isRrtTeamsPage
             ? content.sections.map((section) => (

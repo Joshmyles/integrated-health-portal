@@ -3,6 +3,10 @@ import type {
   PillarMutationResponse,
   PillarsResponse,
   PillarWritePayload,
+  ResourceCategoriesResponse,
+  ResourceCategoryDetailResponse,
+  ResourceCategoryMutationResponse,
+  ResourceCategoryWritePayload,
   ResourceDetailResponse,
   ResourceMutationResponse,
   ResourcesResponse,
@@ -62,6 +66,16 @@ function createJsonRequest(path: string, method: string, payload?: object) {
   });
 }
 
+function createTypedJsonRequest<T>(path: string, method: string, payload?: object) {
+  return requestJson<T>(path, {
+    method,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: payload === undefined ? undefined : JSON.stringify(payload)
+  });
+}
+
 export function fetchLegacyPillars() {
   return requestJson<PillarsResponse>("/api/pillars");
 }
@@ -75,18 +89,49 @@ export function fetchResourceManagementPillar(pillarId: number) {
 }
 
 export function createResourceManagementPillar(payload: PillarWritePayload) {
-  return createJsonRequest("/api/resource-management/pillars", "POST", payload);
+  return createTypedJsonRequest<PillarMutationResponse>(
+    "/api/resource-management/pillars",
+    "POST",
+    payload
+  );
 }
 
 export function updateResourceManagementPillar(
   pillarId: number,
   payload: PillarWritePayload
 ) {
-  return createJsonRequest(`/api/resource-management/pillars/${pillarId}`, "PUT", payload);
+  return createTypedJsonRequest<PillarMutationResponse>(
+    `/api/resource-management/pillars/${pillarId}`,
+    "PUT",
+    payload
+  );
 }
 
 export function deleteResourceManagementPillar(pillarId: number) {
-  return createJsonRequest(`/api/resource-management/pillars/${pillarId}`, "DELETE");
+  return createTypedJsonRequest<PillarMutationResponse>(
+    `/api/resource-management/pillars/${pillarId}`,
+    "DELETE"
+  );
+}
+
+export function fetchResourceCategories() {
+  return requestJson<ResourceCategoriesResponse>(
+    "/api/resource-management/resource-categories"
+  );
+}
+
+export function fetchResourceCategory(categoryId: number) {
+  return requestJson<ResourceCategoryDetailResponse>(
+    `/api/resource-management/resource-categories/${categoryId}`
+  );
+}
+
+export function createResourceCategory(payload: ResourceCategoryWritePayload) {
+  return createTypedJsonRequest<ResourceCategoryMutationResponse>(
+    "/api/resource-management/resource-categories",
+    "POST",
+    payload
+  );
 }
 
 export function fetchResources() {
@@ -98,13 +143,24 @@ export function fetchResource(resourceId: number) {
 }
 
 export function createResource(payload: ResourceWritePayload) {
-  return createJsonRequest("/api/resource-management/resources", "POST", payload);
+  return createTypedJsonRequest<ResourceMutationResponse>(
+    "/api/resource-management/resources",
+    "POST",
+    payload
+  );
 }
 
 export function updateResource(resourceId: number, payload: ResourceWritePayload) {
-  return createJsonRequest(`/api/resource-management/resources/${resourceId}`, "PUT", payload);
+  return createTypedJsonRequest<ResourceMutationResponse>(
+    `/api/resource-management/resources/${resourceId}`,
+    "PUT",
+    payload
+  );
 }
 
 export function deleteResource(resourceId: number) {
-  return createJsonRequest(`/api/resource-management/resources/${resourceId}`, "DELETE");
+  return createTypedJsonRequest<ResourceMutationResponse>(
+    `/api/resource-management/resources/${resourceId}`,
+    "DELETE"
+  );
 }
