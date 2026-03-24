@@ -27,3 +27,78 @@ export interface RequisitionMutationResponse {
   id?: number;
   message?: string;
 }
+
+export interface NullableStringValue {
+  String: string;
+  Valid: boolean;
+}
+
+export interface NullableInt64Value {
+  Int64: number;
+  Valid: boolean;
+}
+
+export interface NullableTimeValue {
+  Time: string;
+  Valid: boolean;
+}
+
+export interface PillarHeadRecord {
+  created_at: string;
+  created_by: NullableInt64Value;
+  department_id: NullableInt64Value;
+  email: NullableStringValue;
+  first_name: NullableStringValue;
+  is_active: boolean;
+  is_locked: boolean;
+  last_login_at: NullableTimeValue;
+  last_name: NullableStringValue;
+  password_changed_at: NullableTimeValue;
+  password_expires_at: NullableTimeValue;
+  updated_at: string;
+  updated_by: NullableInt64Value;
+  user_employee: NullableInt64Value;
+  user_id: number;
+  user_name: NullableStringValue;
+  user_pass: NullableStringValue;
+}
+
+export interface PillarRecord {
+  created_at: string;
+  created_by: NullableInt64Value;
+  description: NullableStringValue;
+  id: number;
+  is_active: boolean;
+  name: string;
+  pillar_head?: PillarHeadRecord;
+  pillar_head_email: NullableStringValue;
+  pillar_head_id: NullableInt64Value;
+  pillar_head_name: NullableStringValue;
+  pillar_head_phone: NullableStringValue;
+  updated_at: string;
+  updated_by: NullableInt64Value;
+}
+
+export interface PillarsResponse {
+  pillars: PillarRecord[];
+}
+
+export interface PillarDetailResponse {
+  pillar: PillarRecord;
+}
+
+export interface PillarMutationResponse {
+  id?: number;
+  message?: string;
+  pillar?: PillarRecord | null;
+}
+
+export interface PillarWritePayload {
+  description: string;
+  is_active: boolean;
+  name: string;
+  pillar_head_email: string;
+  pillar_head_id: number;
+  pillar_head_name: string;
+  pillar_head_phone: string;
+}

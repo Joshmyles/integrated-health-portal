@@ -282,7 +282,8 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background: rgb(0 0 0 / 42%);
+  background: rgba(44, 44, 44, 0.28);
+  backdrop-filter: blur(3px);
   z-index: 300;
   padding: 14px;
 }

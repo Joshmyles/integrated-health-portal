@@ -1,3 +1,5 @@
 export const resourceManagementQueryKeys = {
-  requisitions: () => ["resource-management", "requisitions"] as const
+  requisitions: () => ["resource-management", "requisitions"] as const,
+  legacyPillars: () => ["resource-management", "pillars", "legacy"] as const,
+  pillars: () => ["resource-management", "pillars", "list"] as const
 };

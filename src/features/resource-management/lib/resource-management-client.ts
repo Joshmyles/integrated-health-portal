@@ -3,7 +3,11 @@
 import type {
   CreateRequisitionPayload,
   RequisitionMutationResponse,
-  RequisitionsResponse
+  RequisitionsResponse,
+  PillarDetailResponse,
+  PillarMutationResponse,
+  PillarsResponse,
+  PillarWritePayload
 } from "@/src/features/resource-management/types/resource-management";
 
 interface ErrorPayload {
@@ -67,4 +71,40 @@ export async function createRequisition(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
   });
+}
+function createJsonRequest(path: string, method: string, payload?: object) {
+  return requestJson<PillarMutationResponse>(path, {
+    method,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: payload === undefined ? undefined : JSON.stringify(payload)
+  });
+}
+
+export function fetchLegacyPillars() {
+  return requestJson<PillarsResponse>("/api/pillars");
+}
+
+export function fetchResourceManagementPillars() {
+  return requestJson<PillarsResponse>("/api/resource-management/pillars");
+}
+
+export function fetchResourceManagementPillar(pillarId: number) {
+  return requestJson<PillarDetailResponse>(`/api/resource-management/pillars/${pillarId}`);
+}
+
+export function createResourceManagementPillar(payload: PillarWritePayload) {
+  return createJsonRequest("/api/resource-management/pillars", "POST", payload);
+}
+
+export function updateResourceManagementPillar(
+  pillarId: number,
+  payload: PillarWritePayload
+) {
+  return createJsonRequest(`/api/resource-management/pillars/${pillarId}`, "PUT", payload);
+}
+
+export function deleteResourceManagementPillar(pillarId: number) {
+  return createJsonRequest(`/api/resource-management/pillars/${pillarId}`, "DELETE");
 }

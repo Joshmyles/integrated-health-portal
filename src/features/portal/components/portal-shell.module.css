@@ -481,6 +481,12 @@
   line-height: 1.5;
 }
 
+.successMessage {
+  color: #21643a;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
 .employeeManagementWorkspace {
   display: flex;
   flex-direction: column;
@@ -674,7 +680,8 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background: rgba(12, 27, 36, 0.38);
+  background: rgba(44, 44, 44, 0.28);
+  backdrop-filter: blur(3px);
 }
 
 .employeeModal {
@@ -707,142 +714,6 @@
   color: #223841;
   font-size: 14px;
   line-height: 1;
-}
-
-.employeeWorkspace {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.employeeControlBar {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
-.employeeControl {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.employeeControlLabel {
-  color: #444444;
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.employeeInput,
-.employeeSelect {
-  min-height: 28px;
-  border: 1px solid #a8a8a8;
-  background: #ffffff;
-  padding: 4px 6px;
-  color: #111111;
-  font-size: 12px;
-  box-shadow: inset 1px 1px 0 #f7f7f7;
-}
-
-.employeeLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.8fr);
-  gap: 12px;
-  min-height: 0;
-}
-
-.employeeResultsPanel,
-.employeeDetailPanel {
-  border: 1px solid #b7b7b7;
-  background: #fcfcfc;
-  box-shadow:
-    inset 1px 1px 0 #ffffff,
-    inset -1px -1px 0 #e0e0e0;
-}
-
-.employeeResultsPanel {
-  padding: 10px;
-}
-
-.employeeDetailPanel {
-  padding: 10px 12px;
-}
-
-.employeeGroup + .employeeGroup {
-  margin-top: 12px;
-}
-
-.employeeGroupTitle,
-.employeeDetailTitle {
-  margin: 0 0 8px;
-  color: #111111;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.employeeList {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.employeeListItem {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  width: 100%;
-  padding: 7px 8px;
-  border: 1px solid #cfcfcf;
-  background: linear-gradient(180deg, #fdfdfd 0%, #f3f3f3 100%);
-  color: #111111;
-  cursor: pointer;
-  text-align: left;
-}
-
-.employeeListItem:hover {
-  background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
-}
-
-.employeeListItemSelected {
-  border-color: #8aa7bd;
-  background: linear-gradient(180deg, #eef5fa 0%, #dfeef7 100%);
-}
-
-.employeeListPrimary {
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.employeeListSecondary {
-  color: #4a4a4a;
-  font-size: 11px;
-}
-
-.employeeDetailList {
-  margin: 0;
-}
-
-.employeeDetailRow {
-  display: grid;
-  grid-template-columns: 92px minmax(0, 1fr);
-  gap: 8px;
-  padding: 6px 0;
-  border-bottom: 1px solid #e2e2e2;
-}
-
-.employeeDetailRow:last-child {
-  border-bottom: none;
-}
-
-.employeeDetailLabel,
-.employeeDetailValue {
-  margin: 0;
-  font-size: 12px;
-}
-
-.employeeDetailLabel {
-  font-weight: 700;
 }
 
 @media (max-width: 960px) {
@@ -878,10 +749,6 @@
   }
 
   .employeeFilterBar {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .employeeLayout {
     grid-template-columns: minmax(0, 1fr);
   }
 }

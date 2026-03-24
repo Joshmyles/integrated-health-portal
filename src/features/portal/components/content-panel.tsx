@@ -7,6 +7,9 @@ import { OutbreakWorkspace } from '@/src/features/outbreak/components/outbreak-w
 import { CifMpoxWorkspace } from '@/src/features/cif/components/cif-mpox-workspace';
 import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
+import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
+import { RrtTeamsManagementWorkspace } from '@/src/features/portal/components/rrt-teams-management-workspace';
+
 
 interface ContentPanelProps {
   content?: PortalPageContent;
@@ -26,8 +29,10 @@ export function ContentPanel({
   const isCifVhf = content?.id === 'cif-vhf';
   const isSettings = content?.id === 'system-settings';
   const isCifMpox = content?.id === 'cif-mpox';
+  const isDeploymentPillars = content?.id === 'deployment-pillars';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
+  const isRrtTeamsPage = content?.id === 'deployment-rrt-teams';
 
   return (
     <section className={styles.contentPanel}>
@@ -71,7 +76,9 @@ export function ContentPanel({
           !isUserManagement &&
           !isCifVhf &&
           !isCifMpox &&
+          !isDeploymentPillars &&
           !isEmployeesPage &&
+          !isRrtTeamsPage &&
           !isOutbreakWorkspace &&
           !isDeploymentRequisitions &&
           !isSettings &&
@@ -96,7 +103,9 @@ export function ContentPanel({
           !isUserManagement &&
           !isCifVhf &&
           !isCifMpox &&
+          !isDeploymentPillars &&
           !isEmployeesPage &&
+          !isRrtTeamsPage &&
           !isOutbreakWorkspace &&
           !isDeploymentRequisitions &&
           !isSettings &&
@@ -144,13 +153,17 @@ export function ContentPanel({
           {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
           {isCifVhf ? <CifVhfWorkspace /> : null}
           {isCifMpox ? <CifMpoxWorkspace /> : null}
-          {isDeploymentRequisitions ? <DeploymentRequisitionsWorkspace /> : null}
-
-          {!isHome && !isUserManagement && !isOutbreakWorkspace && !isDeploymentRequisitions
+          {isDeploymentPillars ? <PillarsWorkspace /> : null}
           {isEmployeesPage && content.employeeDirectory?.length ? (
             <EmployeeManagementWorkspace
               employees={content.employeeDirectory}
               title={content.dataTable?.title ?? 'Employee Directory'}
+            />
+          ) : null}
+          {isRrtTeamsPage && content.rrtTeams?.length ? (
+            <RrtTeamsManagementWorkspace
+              teams={content.rrtTeams}
+              title={content.dataTable?.title ?? 'RRT Team Register'}
             />
           ) : null}
           {isSettings ? <SettingsWorkspace /> : null}
@@ -159,7 +172,8 @@ export function ContentPanel({
           !isUserManagement &&
           !isOutbreakWorkspace &&
           !isSettings &&
-          !isEmployeesPage
+          !isEmployeesPage &&
+          !isRrtTeamsPage
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>
