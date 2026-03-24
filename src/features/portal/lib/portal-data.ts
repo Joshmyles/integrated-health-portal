@@ -86,6 +86,7 @@ const portalTree: PortalTreeNode[] = [
     kind: "group",
     children: [{ id: "user-management-home", label: "Home", kind: "item" }]
   },
+  { id: "system-settings", label: "System Settings", kind: "item" },
   { id: "client-satisfaction", label: "Client Satisfaction", kind: "item" },
   { id: "quality-of-care", label: "Quality of care", kind: "item" },
   { id: "self-service", label: "Self Service", kind: "item" },
@@ -200,6 +201,13 @@ function createGroupPage(input: {
 }
 
 const portalContentById: Record<string, PortalPageContent> = {
+  "system-settings": {
+    id: "system-settings",
+    title: "System Settings",
+    intro: "Manage RBAC roles, permissions, and user access controls for this platform.",
+    records: [],
+    sections: []
+  },
   home: {
     id: "home",
     title: "Home",

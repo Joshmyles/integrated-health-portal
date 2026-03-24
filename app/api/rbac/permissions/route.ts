@@ -4,7 +4,6 @@ import {
   requestResponseHealth,
   ResponseHealthApiError
 } from "@/src/features/users/lib/users-server";
-import type { RolesResponse } from "@/src/features/users/types/users";
 
 export async function GET() {
   if (!(await readPortalSession())) {
@@ -12,7 +11,7 @@ export async function GET() {
   }
 
   try {
-    const response = await requestResponseHealth<RolesResponse>("/api/rbac/roles");
+    const response = await requestResponseHealth<unknown>("/api/rbac/permissions");
     return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ResponseHealthApiError) {
@@ -20,7 +19,7 @@ export async function GET() {
     }
 
     return NextResponse.json(
-      { message: "The roles list could not be loaded right now." },
+      { message: "The permissions list could not be loaded right now." },
       { status: 502 }
     );
   }
@@ -40,7 +39,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await requestResponseHealth<unknown>("/api/rbac/roles", {
+    const response = await requestResponseHealth<unknown>("/api/rbac/permissions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
@@ -52,7 +51,7 @@ export async function POST(request: Request) {
     }
 
     return NextResponse.json(
-      { message: "The role could not be created right now." },
+      { message: "The permission could not be created right now." },
       { status: 502 }
     );
   }
