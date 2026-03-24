@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCreateRrtTeam } from "@/src/features/portal/hooks/use-create-rrt-team";
 import { useDeleteRrtTeam } from "@/src/features/portal/hooks/use-delete-rrt-team";
 import { useUpdateRrtTeam } from "@/src/features/portal/hooks/use-update-rrt-team";
 import type { PortalRrtTeamEntry } from "@/src/features/portal/types/portal";
-import styles from "./portal-shell.module.css";
+import styles from "./rrt-teams-management-workspace.module.css";
 
 interface RrtTeamsManagementWorkspaceProps {
   teams: PortalRrtTeamEntry[];
@@ -38,6 +38,10 @@ const INITIAL_FORM_STATE: RrtTeamFormState = {
   team_type: ""
 };
 
+function getStatusClassName(status: string) {
+  return status.toLowerCase() === "active" ? styles.statusActive : styles.statusInactive;
+}
+
 export function RrtTeamsManagementWorkspace({
   teams,
   title
@@ -45,22 +49,102 @@ export function RrtTeamsManagementWorkspace({
   const createMutation = useCreateRrtTeam();
   const deleteMutation = useDeleteRrtTeam();
   const updateMutation = useUpdateRrtTeam();
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingTeamId, setEditingTeamId] = useState<number | null>(null);
+
+  const [searchValue, setSearchValue] = useState("");
+  const [openMenuTeamId, setOpenMenuTeamId] = useState<number | null>(null);
+  const [editingTeam, setEditingTeam] = useState<PortalRrtTeamEntry | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<PortalRrtTeamEntry | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [formState, setFormState] = useState<RrtTeamFormState>(INITIAL_FORM_STATE);
 
+  const normalizedSearch = searchValue.trim().toLowerCase();
+  const filteredTeams = teams.filter((team) => {
+    if (!normalizedSearch) {
+      return true;
+    }
+
+    return [
+      team.name,
+      team.code,
+      team.type,
+      team.leadName,
+      team.leadPhone,
+      team.leadEmail,
+      team.specializations,
+      team.baseLocation,
+      team.isActive
+    ]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalizedSearch);
+  });
+
+  const activeTeams = teams.filter((team) => team.isActive === "Active").length;
+  const teamsWithLeadPhone = teams.filter((team) => team.leadPhone !== "Not set").length;
+  const teamsWithBaseLocation = teams.filter((team) => team.baseLocation !== "Not set").length;
+
+  const isModalOpen = isCreateOpen || Boolean(editingTeam);
+  const isSaving = createMutation.isPending || updateMutation.isPending;
+  const deleteError =
+    deleteMutation.isError && deleteMutation.error instanceof Error
+      ? deleteMutation.error.message
+      : null;
+
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      if (!target.closest("[data-actions-menu]")) {
+        setOpenMenuTeamId(null);
+      }
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return;
+      }
+
+      setOpenMenuTeamId(null);
+      setIsCreateOpen(false);
+      setEditingTeam(null);
+      setDeleteTarget(null);
+      setFormError(null);
+      setFormState(INITIAL_FORM_STATE);
+      createMutation.reset();
+      updateMutation.reset();
+      deleteMutation.reset();
+    }
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [createMutation, deleteMutation, updateMutation]);
+
   function openCreateModal() {
-    setEditingTeamId(null);
+    setOpenMenuTeamId(null);
+    setEditingTeam(null);
+    setIsCreateOpen(true);
     setFormError(null);
     setStatusMessage(null);
     setFormState(INITIAL_FORM_STATE);
-    setIsModalOpen(true);
+    createMutation.reset();
+    updateMutation.reset();
   }
 
   function openEditModal(team: PortalRrtTeamEntry) {
-    setEditingTeamId(team.id);
+    setOpenMenuTeamId(null);
+    setIsCreateOpen(false);
+    setEditingTeam(team);
     setFormError(null);
     setStatusMessage(null);
     setFormState({
@@ -75,26 +159,39 @@ export function RrtTeamsManagementWorkspace({
       team_size: team.size === "Not set" ? "" : team.size,
       team_type: team.type === "Not set" ? "" : team.type
     });
-    setIsModalOpen(true);
+    createMutation.reset();
+    updateMutation.reset();
   }
 
-  function closeModal() {
-    setIsModalOpen(false);
-    setEditingTeamId(null);
+  function closeFormModal() {
+    setOpenMenuTeamId(null);
+    setIsCreateOpen(false);
+    setEditingTeam(null);
     setFormError(null);
     setFormState(INITIAL_FORM_STATE);
+    createMutation.reset();
+    updateMutation.reset();
   }
 
-  async function handleSubmit() {
-    setFormError(null);
+  function updateFormField<Key extends keyof RrtTeamFormState>(
+    key: Key,
+    value: RrtTeamFormState[Key]
+  ) {
+    setFormState((current) => ({
+      ...current,
+      [key]: value
+    }));
+
+    if (formError) {
+      setFormError(null);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setStatusMessage(null);
 
     const teamSize = Number(formState.team_size);
-
-    if (!editingTeamId) {
-      setFormError("A team must be selected for update.");
-      return;
-    }
 
     if (!formState.team_name.trim() || !formState.team_code.trim() || !formState.team_type.trim()) {
       setFormError("Team name, code, and type are required.");
@@ -123,289 +220,372 @@ export function RrtTeamsManagementWorkspace({
     };
 
     try {
-      if (editingTeamId) {
-        const response = await updateMutation.mutateAsync({
-          teamId: editingTeamId,
+      if (editingTeam) {
+        await updateMutation.mutateAsync({
+          teamId: editingTeam.id,
           payload
         });
-        setStatusMessage(response.message ?? `RRT team ${editingTeamId} updated successfully.`);
+        setStatusMessage(`RRT team ${editingTeam.id} updated successfully.`);
       } else {
-        const response = await createMutation.mutateAsync(payload);
-        setStatusMessage(response.message ?? "RRT team created successfully.");
+        await createMutation.mutateAsync(payload);
+        setStatusMessage("RRT team created successfully.");
       }
 
-      closeModal();
+      closeFormModal();
     } catch (error) {
       setFormError(
         error instanceof Error
           ? error.message
-          : editingTeamId
+          : editingTeam
             ? "The team could not be updated."
             : "The team could not be created."
       );
     }
   }
 
-  async function handleDelete(teamId: number) {
-    setStatusMessage(null);
-
-    const shouldDelete = window.confirm(
-      `Delete RRT team ${teamId}? This action cannot be undone.`
-    );
-
-    if (!shouldDelete) {
+  async function confirmDelete() {
+    if (!deleteTarget) {
       return;
     }
 
-    try {
-      const response = await deleteMutation.mutateAsync(teamId);
-      setStatusMessage(response.message ?? "deleted");
-    } catch (error) {
-      setStatusMessage(error instanceof Error ? error.message : "The team could not be deleted.");
-    }
+    await deleteMutation.mutateAsync(deleteTarget.id);
+    setStatusMessage(`RRT team ${deleteTarget.id} deleted successfully.`);
+    setOpenMenuTeamId(null);
+    setDeleteTarget(null);
   }
 
   return (
-    <section className={styles.employeeManagementWorkspace}>
-      <section className={styles.dataSection}>
-        <div className={styles.employeeToolbar}>
-          <div>
-            <h2 className={styles.plainSectionTitle}>{title}</h2>
-            <p className={styles.dataTableCaption}>
-              Live RRT team records with row-level update and delete actions.
-            </p>
-          </div>
-          <button
-            className={styles.employeeSubmitButton}
-            onClick={openCreateModal}
-            type="button"
-          >
-            Create Team
-          </button>
+    <section className={styles.workspace}>
+      <div className={styles.toolbar}>
+        <div className={styles.toolbarIntro}>
+          <h2 className={styles.sectionTitle}>{title}</h2>
+          <p className={styles.toolbarCopy}>
+            Manage the live RRT roster with search, summary cards, and row-level actions.
+          </p>
         </div>
+        <input
+          className={styles.searchInput}
+          name="team-search"
+          onChange={(event) => setSearchValue(event.target.value)}
+          placeholder="Search teams, leads, types, codes, or locations"
+          value={searchValue}
+        />
+        <button className={styles.primaryButton} onClick={openCreateModal} type="button">
+          New Team
+        </button>
+      </div>
 
-        {statusMessage ? <div className={styles.statusMessage}>{statusMessage}</div> : null}
+      <div className={styles.summaryGrid}>
+        <article className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Total Teams</div>
+          <div className={styles.summaryValue}>{teams.length}</div>
+          <p className={styles.summaryNote}>Live rows from `/api/resource-management/rrt-teams`.</p>
+        </article>
+        <article className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Active Teams</div>
+          <div className={styles.summaryValue}>{activeTeams}</div>
+          <p className={styles.summaryNote}>Teams currently marked active.</p>
+        </article>
+        <article className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Lead Phones Present</div>
+          <div className={styles.summaryValue}>{teamsWithLeadPhone}</div>
+          <p className={styles.summaryNote}>Teams with a populated lead phone number.</p>
+        </article>
+        <article className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Base Locations Set</div>
+          <div className={styles.summaryValue}>{teamsWithBaseLocation}</div>
+          <p className={styles.summaryNote}>Teams with a populated base location.</p>
+        </article>
+      </div>
 
-        <div className={styles.employeeTableViewport}>
-          <div className={styles.dataTableWrap}>
-            <table className={styles.dataTable}>
-              <thead>
-                <tr>
-                  <th scope="col">Team</th>
-                  <th scope="col">Code</th>
-                  <th scope="col">Type</th>
-                  <th scope="col">Lead</th>
-                  <th scope="col">Lead Phone</th>
-                  <th scope="col">Lead Email</th>
-                  <th scope="col">Members</th>
-                  <th scope="col">Specializations</th>
-                  <th scope="col">Base Location</th>
-                  <th scope="col">Status</th>
-                  <th scope="col">Created By</th>
-                  <th scope="col">Updated</th>
-                  <th className={styles.employeeActionsHeader} scope="col">Actions</th>
+      {createMutation.isError || updateMutation.isError || deleteMutation.isError ? (
+        <div className={styles.errorBanner}>
+          {formError ??
+            (createMutation.error instanceof Error
+              ? createMutation.error.message
+              : updateMutation.error instanceof Error
+                ? updateMutation.error.message
+                : deleteMutation.error instanceof Error
+                  ? deleteMutation.error.message
+                  : "The RRT team request could not be completed.")}
+        </div>
+      ) : null}
+
+      {statusMessage ? <div className={styles.statusRow}>{statusMessage}</div> : null}
+
+      <div className={styles.tableWrap}>
+        <table className={styles.table}>
+          <thead>
+            <tr>
+              <th scope="col">Team</th>
+              <th scope="col">Type</th>
+              <th scope="col">Lead</th>
+              <th scope="col">Contacts</th>
+              <th scope="col">Members</th>
+              <th scope="col">Specializations</th>
+              <th scope="col">Base Location</th>
+              <th scope="col">Status</th>
+              <th scope="col">Updated</th>
+              <th scope="col">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {filteredTeams.length ? (
+              filteredTeams.map((team) => (
+                <tr key={team.id}>
+                  <td>
+                    {team.name}
+                    <br />
+                    Code: {team.code}
+                  </td>
+                  <td>{team.type}</td>
+                  <td>{team.leadName}</td>
+                  <td>
+                    {team.leadEmail}
+                    {team.leadPhone !== "Not set" ? ` / ${team.leadPhone}` : ""}
+                  </td>
+                  <td>{team.size}</td>
+                  <td>{team.specializations}</td>
+                  <td>{team.baseLocation}</td>
+                  <td>
+                    <span className={`${styles.statusBadge} ${getStatusClassName(team.isActive)}`}>
+                      {team.isActive}
+                    </span>
+                  </td>
+                  <td>{team.updatedAt}</td>
+                  <td className={styles.actionsCell}>
+                    <div className={styles.actionsMenuWrap} data-actions-menu="">
+                      <button
+                        aria-expanded={openMenuTeamId === team.id}
+                        aria-haspopup="menu"
+                        className={styles.moreButton}
+                        onClick={() =>
+                          setOpenMenuTeamId((current) => (current === team.id ? null : team.id))
+                        }
+                        type="button"
+                      >
+                        <span aria-hidden="true" className={styles.moreDots}>
+                          <svg fill="currentColor" height="16" viewBox="0 0 20 20" width="16">
+                            <circle cx="10" cy="4.2" r="1.4" />
+                            <circle cx="10" cy="10" r="1.4" />
+                            <circle cx="10" cy="15.8" r="1.4" />
+                          </svg>
+                        </span>
+                      </button>
+
+                      {openMenuTeamId === team.id ? (
+                        <div className={styles.dropdown} role="menu">
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => openEditModal(team)}
+                            type="button"
+                          >
+                            Edit team
+                          </button>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => {
+                              setOpenMenuTeamId(null);
+                              setDeleteTarget(team);
+                            }}
+                            type="button"
+                          >
+                            Delete team
+                          </button>
+                        </div>
+                      ) : null}
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {teams.map((team) => (
-                  <tr key={team.id}>
-                    <td>{team.name}</td>
-                    <td>{team.code}</td>
-                    <td>{team.type}</td>
-                    <td>{team.leadName}</td>
-                    <td>{team.leadPhone}</td>
-                    <td>{team.leadEmail}</td>
-                    <td>{team.size}</td>
-                    <td>{team.specializations}</td>
-                    <td>{team.baseLocation}</td>
-                    <td>{team.isActive}</td>
-                    <td>{team.createdBy}</td>
-                    <td>{team.updatedAt}</td>
-                    <td className={styles.employeeActionsCell}>
-                      <div className={styles.employeeRowActions}>
-                        <button
-                          className={styles.employeeRowButton}
-                          onClick={() => openEditModal(team)}
-                          type="button"
-                        >
-                          Update
-                        </button>
-                        <button
-                          className={styles.employeeDeleteButton}
-                          disabled={deleteMutation.isPending}
-                          onClick={() => {
-                            void handleDelete(team.id);
-                          }}
-                          type="button"
-                        >
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </section>
+              ))
+            ) : (
+              <tr>
+                <td className={styles.emptyState} colSpan={10}>
+                  No RRT teams match the current search.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
 
       {isModalOpen ? (
-        <div className={styles.employeeModalBackdrop} onClick={closeModal} role="presentation">
-          <section
+        <div className={styles.modalBackdrop} role="presentation">
+          <div
+            aria-labelledby="rrt-teams-modal-title"
             aria-modal="true"
-            className={styles.employeeModal}
-            onClick={(event) => event.stopPropagation()}
+            className={styles.modalCard}
             role="dialog"
           >
-            <div className={styles.employeeModalHeader}>
+            <div className={styles.modalHeader}>
               <div>
-                <h2 className={styles.plainSectionTitle}>
-                  {editingTeamId ? `Edit RRT Team ${editingTeamId}` : "Create RRT Team"}
+                <h2 className={styles.modalTitle} id="rrt-teams-modal-title">
+                  {editingTeam ? "Edit Team" : "Create Team"}
                 </h2>
-                <p className={styles.dataTableCaption}>
-                  {editingTeamId
-                    ? "Update the selected RRT team using the current resource-management team fields."
-                    : "Create a new RRT team using the current resource-management team fields."}
+                <p className={styles.modalText}>
+                  Maintain the resource-management team roster with the full live team payload.
                 </p>
               </div>
-              <button
-                aria-label="Close RRT team form"
-                className={styles.employeeModalClose}
-                onClick={closeModal}
-                type="button"
-              >
-                x
-              </button>
             </div>
 
-            {formError ? <div className={styles.errorMessage}>{formError}</div> : null}
+            <form onSubmit={handleSubmit}>
+              <div className={styles.modalBody}>
+                <div className={styles.formGrid}>
+                  <label className={styles.field}>
+                    <span>Team Name</span>
+                    <input
+                      onChange={(event) => updateFormField("team_name", event.target.value)}
+                      type="text"
+                      value={formState.team_name}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Team Code</span>
+                    <input
+                      onChange={(event) => updateFormField("team_code", event.target.value)}
+                      type="text"
+                      value={formState.team_code}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Team Type</span>
+                    <input
+                      onChange={(event) => updateFormField("team_type", event.target.value)}
+                      type="text"
+                      value={formState.team_type}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Team Size</span>
+                    <input
+                      onChange={(event) => updateFormField("team_size", event.target.value)}
+                      type="number"
+                      value={formState.team_size}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Lead Name</span>
+                    <input
+                      onChange={(event) => updateFormField("team_lead_name", event.target.value)}
+                      type="text"
+                      value={formState.team_lead_name}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Lead Email</span>
+                    <input
+                      onChange={(event) => updateFormField("team_lead_email", event.target.value)}
+                      type="email"
+                      value={formState.team_lead_email}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Lead Phone</span>
+                    <input
+                      onChange={(event) => updateFormField("team_lead_phone", event.target.value)}
+                      type="text"
+                      value={formState.team_lead_phone}
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Base Location</span>
+                    <input
+                      onChange={(event) => updateFormField("base_location", event.target.value)}
+                      type="text"
+                      value={formState.base_location}
+                    />
+                  </label>
+                  <label className={styles.fieldWide}>
+                    <span>Specializations</span>
+                    <input
+                      onChange={(event) => updateFormField("specializations", event.target.value)}
+                      placeholder="Comma separated"
+                      type="text"
+                      value={formState.specializations}
+                    />
+                  </label>
+                </div>
 
-            <div className={styles.employeeForm}>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Team Name</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_name: event.target.value }))}
-                  type="text"
-                  value={formState.team_name}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Team Code</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_code: event.target.value }))}
-                  type="text"
-                  value={formState.team_code}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Team Type</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_type: event.target.value }))}
-                  type="text"
-                  value={formState.team_type}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Lead Name</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_lead_name: event.target.value }))}
-                  type="text"
-                  value={formState.team_lead_name}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Lead Phone</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_lead_phone: event.target.value }))}
-                  type="text"
-                  value={formState.team_lead_phone}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Lead Email</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_lead_email: event.target.value }))}
-                  type="email"
-                  value={formState.team_lead_email}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Team Size</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, team_size: event.target.value }))}
-                  type="number"
-                  value={formState.team_size}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Specializations</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, specializations: event.target.value }))}
-                  placeholder="Comma separated"
-                  type="text"
-                  value={formState.specializations}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Base Location</span>
-                <input
-                  className={styles.employeeFormInput}
-                  onChange={(event) => setFormState((current) => ({ ...current, base_location: event.target.value }))}
-                  type="text"
-                  value={formState.base_location}
-                />
-              </label>
-              <label className={styles.employeeFormField}>
-                <span className={styles.employeeFormLabel}>Active</span>
-                <select
-                  className={styles.employeeFormInput}
-                  onChange={(event) =>
-                    setFormState((current) => ({
-                      ...current,
-                      is_active: event.target.value === "true"
-                    }))
-                  }
-                  value={formState.is_active ? "true" : "false"}
-                >
-                  <option value="true">Active</option>
-                  <option value="false">Inactive</option>
-                </select>
-              </label>
+                <label className={styles.checkboxRow}>
+                  <input
+                    checked={formState.is_active}
+                    onChange={(event) => updateFormField("is_active", event.target.checked)}
+                    type="checkbox"
+                  />
+                  <span>Mark team as active</span>
+                </label>
+
+                <p className={styles.helperText}>
+                  Keep team names, codes, and availability accurate so deployment records continue
+                  to resolve cleanly to valid response teams.
+                </p>
+
+                {formError ? <p className={styles.inlineError}>{formError}</p> : null}
+              </div>
+
+              <div className={styles.modalFooter}>
+                <button className={styles.secondaryButton} onClick={closeFormModal} type="button">
+                  Cancel
+                </button>
+                <button className={styles.primaryButton} disabled={isSaving} type="submit">
+                  {isSaving ? "Saving..." : editingTeam ? "Save Changes" : "Create Team"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      ) : null}
+
+      {deleteTarget ? (
+        <div className={styles.modalBackdrop} role="presentation">
+          <div
+            aria-labelledby="rrt-teams-delete-title"
+            aria-modal="true"
+            className={styles.modalCard}
+            role="dialog"
+          >
+            <div className={styles.modalHeader}>
+              <div>
+                <h2 className={styles.modalTitle} id="rrt-teams-delete-title">
+                  Delete Team
+                </h2>
+                <p className={styles.modalText}>
+                  Remove <strong>{deleteTarget.name}</strong> from the resource-management team
+                  roster.
+                </p>
+              </div>
             </div>
 
-            <div className={styles.employeeFormActions}>
+            <div className={styles.modalBody}>
+              <p className={styles.modalText}>
+                This action calls `DELETE /api/resource-management/rrt-teams/{deleteTarget.id}`.
+              </p>
+              {deleteError ? <p className={styles.inlineError}>{deleteError}</p> : null}
+            </div>
+
+            <div className={styles.modalFooter}>
               <button
-                className={styles.employeeSecondaryButton}
-                onClick={closeModal}
+                className={styles.secondaryButton}
+                onClick={() => {
+                  setDeleteTarget(null);
+                  deleteMutation.reset();
+                }}
                 type="button"
               >
                 Cancel
               </button>
               <button
-                className={styles.employeeSubmitButton}
-                disabled={createMutation.isPending || updateMutation.isPending}
+                className={styles.dangerButton}
+                disabled={deleteMutation.isPending}
                 onClick={() => {
-                  void handleSubmit();
+                  void confirmDelete();
                 }}
                 type="button"
               >
-                {createMutation.isPending || updateMutation.isPending
-                  ? "Saving..."
-                  : editingTeamId
-                    ? "Update Team"
-                    : "Create Team"}
+                {deleteMutation.isPending ? "Deleting..." : "Delete Team"}
               </button>
             </div>
-          </section>
+          </div>
         </div>
       ) : null}
     </section>

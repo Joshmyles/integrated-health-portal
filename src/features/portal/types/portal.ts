@@ -70,6 +70,24 @@ export interface PortalRrtTeamEntry {
   updatedAt: string;
 }
 
+export interface PortalRrtDeploymentEntry {
+  actualReturnDate: string;
+  assignedDriver: string;
+  assignedVehicle: string;
+  createdBy: string;
+  deploymentDate: string;
+  id: number;
+  notes: string;
+  outbreakId: number;
+  outbreakName: string;
+  purpose: string;
+  status: string;
+  teamId: number;
+  teamName: string;
+  updatedAt: string;
+  expectedReturnDate: string;
+}
+
 export interface PortalPageContent {
   dataTable?: PortalDataTable;
   employeeDirectory?: PortalEmployeeDirectoryEntry[];
@@ -78,6 +96,7 @@ export interface PortalPageContent {
   intro: string;
   message?: string;
   records: PortalRecord[];
+  rrtDeployments?: PortalRrtDeploymentEntry[];
   rrtTeams?: PortalRrtTeamEntry[];
   sections: PortalSection[];
   summaryCards?: PortalSummaryCard[];

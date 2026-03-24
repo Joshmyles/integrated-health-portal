@@ -13,6 +13,7 @@ import {
   fetchRrtTeamsPageData,
   ResponseHealthApiError
 } from "@/src/features/portal/lib/rrt-teams";
+import { fetchRrtDeploymentsPageData } from "@/src/features/portal/lib/rrt-deployments";
 
 const portalTree: PortalTreeNode[] = [
   {
@@ -159,6 +160,7 @@ function createLeafPage(input: {
   checks: string[];
   dataTable?: PortalPageContent["dataTable"];
   employeeDirectory?: PortalPageContent["employeeDirectory"];
+  rrtDeployments?: PortalPageContent["rrtDeployments"];
   summaryCards?: PortalPageContent["summaryCards"];
   rrtTeams?: PortalPageContent["rrtTeams"];
 }): PortalPageContent {
@@ -173,6 +175,7 @@ function createLeafPage(input: {
       { label: "Refresh cadence", value: input.cadence },
       { label: "Responsible unit", value: input.owner }
     ],
+    rrtDeployments: input.rrtDeployments,
     rrtTeams: input.rrtTeams,
     sections: [
       { title: "Expected actions", items: input.actions },
@@ -1980,6 +1983,63 @@ export async function getPortalContent(nodeId: string) {
             "Confirm the endpoint is reachable.",
             "Review whether authentication or network policy changed.",
             "Validate any fallback team list before distribution."
+          ]
+        }),
+        message
+      };
+    }
+  }
+
+  if (nodeId === "deployment-rrt-deployments") {
+    try {
+      const { dataTable, deployments, summaryCards } = await fetchRrtDeploymentsPageData();
+
+      return createLeafPage({
+        id: "deployment-rrt-deployments",
+        title: "RRT Deployments",
+        source: "/api/resource-management/rrt-deployments",
+        cadence: "Live dispatch tracking",
+        owner: "Rapid Response Coordination",
+        intro:
+          "RRT deployments track where rapid response teams are sent, which outbreak they support, and whether each deployment is still active, completed, or delayed.",
+        dataTable,
+        rrtDeployments: deployments,
+        summaryCards,
+        actions: [
+          "Review deployment assignments before dispatching more teams into the field.",
+          "Track which outbreaks have active teams, vehicles, and return windows assigned.",
+          "Close or update deployments promptly so availability stays accurate."
+        ],
+        checks: [
+          "Confirm every deployment points to the correct team and outbreak.",
+          "Review expected and actual return dates for overdue field assignments.",
+          "Validate vehicle and driver details before using deployment records operationally."
+        ]
+      });
+    } catch (error) {
+      const message =
+        error instanceof ResponseHealthApiError
+          ? error.message
+          : "RRT deployment data is temporarily unavailable from the upstream resource-management service.";
+
+      return {
+        ...createLeafPage({
+          id: "deployment-rrt-deployments",
+          title: "RRT Deployments",
+          source: "/api/resource-management/rrt-deployments",
+          cadence: "Live dispatch tracking",
+          owner: "Rapid Response Coordination",
+          intro:
+            "RRT deployments track where rapid response teams are sent, which outbreak they support, and whether each deployment is still active, completed, or delayed.",
+          actions: [
+            "Retry the upstream request when the resource-management service becomes available.",
+            "Use the most recent verified deployment export if an urgent lookup is needed.",
+            "Coordinate with the deployment team before publishing manual corrections."
+          ],
+          checks: [
+            "Confirm the endpoint is reachable.",
+            "Review whether authentication or network policy changed.",
+            "Validate any fallback deployment list before distribution."
           ]
         }),
         message

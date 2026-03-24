@@ -1,4 +1,9 @@
+"use client";
+
 import type {
+  CreateRequisitionPayload,
+  RequisitionMutationResponse,
+  RequisitionsResponse,
   PillarDetailResponse,
   PillarMutationResponse,
   PillarsResponse,
@@ -56,6 +61,39 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   return (payload ?? {}) as T;
 }
 
+export async function fetchRequisitions(): Promise<RequisitionsResponse> {
+  const payload = await requestJson<RequisitionsResponse>("/api/resource-management/requisitions");
+  return payload;
+}
+
+export async function createRequisition(
+  data: CreateRequisitionPayload
+): Promise<RequisitionMutationResponse> {
+  return requestJson<RequisitionMutationResponse>("/api/resource-management/requisitions", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function updateRequisition(
+  id: number,
+  data: CreateRequisitionPayload
+): Promise<RequisitionMutationResponse> {
+  return requestJson<RequisitionMutationResponse>(`/api/resource-management/requisitions/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function deleteRequisition(
+  id: number
+): Promise<RequisitionMutationResponse> {
+  return requestJson<RequisitionMutationResponse>(`/api/resource-management/requisitions/${id}`, {
+    method: "DELETE"
+  });
+}
 function createJsonRequest(path: string, method: string, payload?: object) {
   return requestJson<PillarMutationResponse | ResourceMutationResponse>(path, {
     method,

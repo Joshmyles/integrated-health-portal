@@ -1,3 +1,41 @@
+export interface RequisitionRecord {
+  id: number;
+  requisition_number: string;
+  outbreak_id: number;
+  deployment_id: NullableInt64Value;
+  requested_by: number;
+  requested_date: string;
+  required_date: NullableTimeValue;
+  priority: string;
+  status: string;
+  approved_by?: NullableInt64Value;
+  approved_date?: NullableTimeValue;
+  rejection_reason?: NullableStringValue;
+  dispatch_date?: NullableTimeValue;
+  received_date?: NullableTimeValue;
+  notes: NullableStringValue;
+  created_at: string;
+  updated_at: string;
+}
+
+export type RequisitionsResponse = { requisitions: RequisitionRecord[] };
+
+export interface CreateRequisitionPayload {
+  deployment_id: number;
+  notes: string;
+  outbreak_id: number;
+  priority: string;
+  requested_by: number;
+  required_date: string;
+  requisition_number: string;
+  status: string;
+}
+
+export interface RequisitionMutationResponse {
+  id?: number;
+  message?: string;
+}
+
 export interface NullableStringValue {
   String: string;
   Valid: boolean;
