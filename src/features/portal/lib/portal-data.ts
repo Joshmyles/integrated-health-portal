@@ -3,6 +3,7 @@ import type {
   PortalPageContent,
   PortalTreeNode
 } from "@/src/features/portal/types/portal";
+import { fetchDepartmentsPageData } from "@/src/features/portal/lib/departments";
 import { fetchEmployees } from "@/src/features/portal/lib/employees";
 import {
   fetchAllSubcounties,
@@ -83,7 +84,10 @@ const portalTree: PortalTreeNode[] = [
     id: "human-resources",
     label: "Human Resources",
     kind: "group",
-    children: [{ id: "employees", label: "Employees", kind: "item" }]
+    children: [
+      { id: "employees", label: "Employees", kind: "item" },
+      { id: "departments", label: "Departments", kind: "item" }
+    ]
   },
   {
     id: "user-management",
@@ -159,6 +163,7 @@ function createLeafPage(input: {
   actions: string[];
   checks: string[];
   dataTable?: PortalPageContent["dataTable"];
+  departments?: PortalPageContent["departments"];
   employeeDirectory?: PortalPageContent["employeeDirectory"];
   rrtDeployments?: PortalPageContent["rrtDeployments"];
   summaryCards?: PortalPageContent["summaryCards"];
@@ -166,6 +171,7 @@ function createLeafPage(input: {
 }): PortalPageContent {
   return {
     dataTable: input.dataTable,
+    departments: input.departments,
     employeeDirectory: input.employeeDirectory,
     id: input.id,
     title: input.title,
@@ -1912,6 +1918,63 @@ export async function getPortalContent(nodeId: string) {
 
   if (nodeId === "employees") {
     return getEmployeesPage();
+  }
+
+  if (nodeId === "departments") {
+    try {
+      const { dataTable, departments, summaryCards } = await fetchDepartmentsPageData();
+
+      return createLeafPage({
+        id: "departments",
+        title: "Departments",
+        source: "/api/departments",
+        cadence: "Live on request",
+        owner: "HR Directorate",
+        intro:
+          "The departments register maintains the live HR department structure used across staffing and user assignment workflows.",
+        dataTable,
+        departments,
+        summaryCards,
+        actions: [
+          "Review department names and head assignments before creating new HR-linked records.",
+          "Keep department codes stable so downstream mappings stay reliable.",
+          "Retire or update obsolete departments promptly to avoid assignment confusion."
+        ],
+        checks: [
+          "Confirm department names are unique and correctly spelled.",
+          "Validate department head IDs before publishing updates.",
+          "Review whether inactive departments are still referenced by users or staff workflows."
+        ]
+      });
+    } catch (error) {
+      const message =
+        error instanceof ResponseHealthApiError
+          ? error.message
+          : "Department data is temporarily unavailable from the upstream HR service.";
+
+      return {
+        ...createLeafPage({
+          id: "departments",
+          title: "Departments",
+          source: "/api/departments",
+          cadence: "Live on request",
+          owner: "HR Directorate",
+          intro:
+            "The departments register maintains the live HR department structure used across staffing and user assignment workflows.",
+          actions: [
+            "Retry the upstream request when the departments service becomes available.",
+            "Use the most recent verified department export if an urgent lookup is needed.",
+            "Coordinate with the HR team before publishing manual corrections."
+          ],
+          checks: [
+            "Confirm the endpoint is reachable.",
+            "Review whether authentication or network policy changed.",
+            "Validate any fallback department list before distribution."
+          ]
+        }),
+        message
+      };
+    }
   }
 
   if (nodeId === "deployment-rrt-teams") {

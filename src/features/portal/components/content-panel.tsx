@@ -5,6 +5,7 @@ import styles from "./portal-shell.module.css";
 import type { PortalPageContent } from '@/src/features/portal/types/portal';
 import { OutbreakWorkspace } from '@/src/features/outbreak/components/outbreak-workspace';
 import { CifMpoxWorkspace } from '@/src/features/cif/components/cif-mpox-workspace';
+import { DepartmentsManagementWorkspace } from '@/src/features/portal/components/departments-management-workspace';
 import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
 import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
@@ -35,10 +36,11 @@ export function ContentPanel({
   const isDeploymentResources = content?.id === 'deployment-resources';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
+  const isDepartmentsPage = content?.id === 'departments';
   const isRrtDeploymentsPage = content?.id === 'deployment-rrt-deployments';
   const isRrtTeamsPage = content?.id === 'deployment-rrt-teams';
   const isCustomManagementPage =
-    isEmployeesPage || isRrtDeploymentsPage || isRrtTeamsPage || isDeploymentPillars || isDeploymentRequisitions;
+    isEmployeesPage || isRrtDeploymentsPage || isRrtTeamsPage || isDeploymentPillars || isDeploymentRequisitions ||isDepartmentsPage;
 
   return (
     <section className={styles.contentPanel}>
@@ -90,7 +92,8 @@ export function ContentPanel({
             !isOutbreakWorkspace &&
             !isDeploymentRequisitions &&
             !isSettings &&
-            content.summaryCards?.length ? (
+            !isDepartmentsPage &&
+          content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -119,7 +122,8 @@ export function ContentPanel({
             !isOutbreakWorkspace &&
             !isDeploymentRequisitions &&
             !isSettings &&
-            content.dataTable ? (
+            !isDepartmentsPage &&
+          content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>
                 {content.dataTable.title}
@@ -171,6 +175,12 @@ export function ContentPanel({
               title={content.dataTable?.title ?? 'Employee Directory'}
             />
           ) : null}
+          {isDepartmentsPage && content.departments?.length ? (
+            <DepartmentsManagementWorkspace
+              departments={content.departments}
+              title={content.dataTable?.title ?? 'Department Register'}
+            />
+          ) : null}
           {isRrtDeploymentsPage && content.rrtDeployments?.length ? (
             <RrtDeploymentsManagementWorkspace
               deployments={content.rrtDeployments}
@@ -187,25 +197,16 @@ export function ContentPanel({
           {isDeploymentRequisitions ? <DeploymentRequisitionsWorkspace /> : null}
 
           {!isHome &&
-<<<<<<< HEAD
             !isUserManagement &&
             !isOutbreakWorkspace &&
             !isSettings &&
             !isEmployeesPage &&
             !isRrtDeploymentsPage &&
             !isRrtTeamsPage &&
-            !isDeploymentPillars &&
-            !isDeploymentRequisitions
-=======
-          !isUserManagement &&
-          !isOutbreakWorkspace &&
-          !isSettings &&
-          !isDeploymentResources &&
-          !isEmployeesPage &&
-          !isRrtDeploymentsPage &&
-          !isRrtTeamsPage &&
-          !isDeploymentPillars
->>>>>>> 29a47650f87a63801003d66eea5b100747d32023
+            !isDeploymentRequisitions &&
+            !isDeploymentResources &&
+            !isDepartmentsPage &&
+            !isDeploymentPillars
             ? content.sections.map((section) => (
               <section className={styles.plainSection} key={section.title}>
                 <h2 className={styles.plainSectionTitle}>{section.title}</h2>
