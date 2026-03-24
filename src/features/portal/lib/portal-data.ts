@@ -3,6 +3,7 @@ import type {
   PortalPageContent,
   PortalTreeNode
 } from "@/src/features/portal/types/portal";
+import { fetchEmployees } from "@/src/features/portal/lib/employees";
 import {
   fetchAllSubcounties,
   fetchDistricts,
@@ -73,13 +74,19 @@ const portalTree: PortalTreeNode[] = [
   { id: "health-security", label: "Health Security", kind: "item" },
   { id: "surveillance-reports", label: "Surveillance", kind: "item" },
   { id: "standard-reports", label: "Standard Reports", kind: "item" },
-  { id: "human-resources", label: "Human Resources", kind: "item" },
+  {
+    id: "human-resources",
+    label: "Human Resources",
+    kind: "group",
+    children: [{ id: "employees", label: "Employees", kind: "item" }]
+  },
   {
     id: "user-management",
     label: "User Management",
     kind: "group",
     children: [{ id: "user-management-home", label: "Home", kind: "item" }]
   },
+  { id: "system-settings", label: "System Settings", kind: "item" },
   { id: "client-satisfaction", label: "Client Satisfaction", kind: "item" },
   { id: "quality-of-care", label: "Quality of care", kind: "item" },
   { id: "self-service", label: "Self Service", kind: "item" },
@@ -147,10 +154,12 @@ function createLeafPage(input: {
   actions: string[];
   checks: string[];
   dataTable?: PortalPageContent["dataTable"];
+  employeeDirectory?: PortalPageContent["employeeDirectory"];
   summaryCards?: PortalPageContent["summaryCards"];
 }): PortalPageContent {
   return {
     dataTable: input.dataTable,
+    employeeDirectory: input.employeeDirectory,
     id: input.id,
     title: input.title,
     intro: input.intro,
@@ -192,6 +201,13 @@ function createGroupPage(input: {
 }
 
 const portalContentById: Record<string, PortalPageContent> = {
+  "system-settings": {
+    id: "system-settings",
+    title: "System Settings",
+    intro: "Manage RBAC roles, permissions, and user access controls for this platform.",
+    records: [],
+    sections: []
+  },
   home: {
     id: "home",
     title: "Home",
@@ -704,22 +720,34 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Keep high-use reports near the top of the workflow."
     ]
   }),
-  "human-resources": createLeafPage({
+  "human-resources": createGroupPage({
     id: "human-resources",
     title: "Human Resources",
-    source: "Staffing and deployment records",
-    cadence: "Daily operational review",
     owner: "HR Directorate",
-    intro: "Use the same portal shell to review staffing readiness, field assignments, and human resource actions.",
+    intro: "A shared human resources workspace for staff directories, deployment review, and workforce readiness checks.",
+    modules: ["Employees"],
+    process: [
+      "Start with the employee directory when validating staffing availability.",
+      "Use the same navigation path for routine HR review and emergency response staffing.",
+      "Keep staff records readable and easy to scan on shared office machines."
+    ]
+  }),
+  employees: createLeafPage({
+    id: "employees",
+    title: "Employees",
+    source: "Employee master directory",
+    cadence: "Live on request",
+    owner: "HR Directorate",
+    intro: "Review employee records, facility assignments, and contact details from the main workforce directory.",
     actions: [
-      "Review staffing gaps by location.",
-      "Track active assignments and redeployments.",
-      "Support quick workforce decisions during response periods."
+      "Check employee records and facility assignments.",
+      "Review missing contact or cadre details.",
+      "Support quick workforce coordination during response periods."
     ],
     checks: [
-      "Confirm assignment dates are current.",
-      "Validate staff records against the master directory.",
-      "Review incomplete profiles before escalation."
+      "Confirm employee profiles are current.",
+      "Validate facility names against the workforce directory.",
+      "Review incomplete records before escalation."
     ]
   }),
   "client-satisfaction": createLeafPage({
@@ -1787,6 +1815,98 @@ async function getVillageProfilesPage(): Promise<PortalPageContent> {
   }
 }
 
+async function getEmployeesPage(pageId = "employees", pageTitle = "Employees"): Promise<PortalPageContent> {
+  try {
+    const employees = await fetchEmployees();
+    const assignedEmployees = employees.filter((employee) => employee.facilityId > 0);
+    const employeesWithEmail = employees.filter((employee) => employee.email !== "Not set");
+    const coveredFacilities = new Set(
+      assignedEmployees.map((employee) => `${employee.facilityId}:${employee.facilityName}`)
+    ).size;
+
+    return createLeafPage({
+      id: pageId,
+      title: pageTitle,
+      source: "response.health.go.ug/api/employees",
+      cadence: "Live on request",
+      owner: "HR Directorate",
+      intro: "Live employee records from the workforce directory, normalized for easier operational review.",
+      actions: [
+        "Review employee names, cadres, and facility assignments.",
+        "Track staff records that still need contact details or cleanup.",
+        "Support deployment and staffing decisions from a single directory view."
+      ],
+      checks: [
+        "Confirm facility assignments are current.",
+        "Review records still missing cadre, phone, or email fields.",
+        "Validate suspicious duplicates before sharing exports."
+      ],
+      summaryCards: [
+        {
+          label: "Employees Available",
+          value: `${employees.length}`,
+          note: "Rows returned by the upstream employees endpoint"
+        },
+        {
+          label: "Facilities Covered",
+          value: `${coveredFacilities}`,
+          note: "Unique assigned facilities represented in the employee list"
+        },
+        {
+          label: "Assigned Employees",
+          value: `${assignedEmployees.length}`,
+          note: "Employees linked to a facility ID greater than zero"
+        },
+        {
+          label: "Emails Present",
+          value: `${employeesWithEmail.length}`,
+          note: "Employees with a usable email address"
+        }
+      ],
+      employeeDirectory: employees,
+      dataTable: {
+        title: "Employee Directory",
+        caption: "Latest employee records returned by the upstream workforce service.",
+        columns: ["Employee", "Cadre", "Sex", "Phone", "Email", "Facility", "Facility ID"],
+        rows: employees.map((employee) => ({
+          id: `${employee.id}`,
+          cells: [
+            employee.fullName,
+            employee.cadre,
+            employee.sex,
+            employee.phone,
+            employee.email,
+            employee.facilityName,
+            `${employee.facilityId}`
+          ]
+        }))
+      }
+    });
+  } catch {
+    return {
+      ...createLeafPage({
+        id: pageId,
+        title: pageTitle,
+        source: "response.health.go.ug/api/employees",
+        cadence: "Live on request",
+        owner: "HR Directorate",
+        intro: "Live employee records from the workforce directory, normalized for easier operational review.",
+        actions: [
+          "Retry the upstream request when the employees service becomes available.",
+          "Use the most recent verified export if an urgent lookup is needed.",
+          "Coordinate with the HR team before publishing manual corrections."
+        ],
+        checks: [
+          "Confirm the endpoint is reachable.",
+          "Review whether authentication or network policy changed.",
+          "Validate any fallback employee list before distribution."
+        ]
+      }),
+      message: "Employee data is temporarily unavailable from the upstream workforce service."
+    };
+  }
+}
+
 export async function getPortalContent(nodeId: string) {
   if (nodeId === "district-profiles") {
     return getDistrictProfilesPage();
@@ -1798,6 +1918,14 @@ export async function getPortalContent(nodeId: string) {
 
   if (nodeId === "village-profiles") {
     return getVillageProfilesPage();
+  }
+
+  if (nodeId === "employees") {
+    return getEmployeesPage();
+  }
+
+  if (nodeId === "human-resources") {
+    return getEmployeesPage("human-resources", "Human Resources");
   }
 
   return portalContentById[nodeId];

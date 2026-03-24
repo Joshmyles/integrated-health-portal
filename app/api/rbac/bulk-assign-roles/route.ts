@@ -4,27 +4,6 @@ import {
   requestResponseHealth,
   ResponseHealthApiError
 } from "@/src/features/users/lib/users-server";
-import type { RolesResponse } from "@/src/features/users/types/users";
-
-export async function GET() {
-  if (!(await readPortalSession())) {
-    return NextResponse.json({ message: "Authentication required." }, { status: 401 });
-  }
-
-  try {
-    const response = await requestResponseHealth<RolesResponse>("/api/rbac/roles");
-    return NextResponse.json(response);
-  } catch (error) {
-    if (error instanceof ResponseHealthApiError) {
-      return NextResponse.json({ message: error.message }, { status: error.status });
-    }
-
-    return NextResponse.json(
-      { message: "The roles list could not be loaded right now." },
-      { status: 502 }
-    );
-  }
-}
 
 export async function POST(request: Request) {
   if (!(await readPortalSession())) {
@@ -40,19 +19,19 @@ export async function POST(request: Request) {
   }
 
   try {
-    const response = await requestResponseHealth<unknown>("/api/rbac/roles", {
+    const response = await requestResponseHealth<unknown>("/api/rbac/bulk-assign-roles", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body)
     });
-    return NextResponse.json(response, { status: 201 });
+    return NextResponse.json(response);
   } catch (error) {
     if (error instanceof ResponseHealthApiError) {
       return NextResponse.json({ message: error.message }, { status: error.status });
     }
 
     return NextResponse.json(
-      { message: "The role could not be created right now." },
+      { message: "The bulk role assignment could not be completed right now." },
       { status: 502 }
     );
   }
