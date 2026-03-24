@@ -103,6 +103,7 @@
 
 .tableWrap {
   overflow-x: auto;
+  overflow-y: visible;
   background: #ffffff;
 }
 
@@ -175,7 +176,7 @@
   position: absolute;
   top: calc(100% + 4px);
   right: 0;
-  z-index: 5;
+  z-index: 50;
   min-width: 156px;
   padding: 4px;
   border: 1px solid var(--legacy-border-dark);

@@ -187,6 +187,7 @@ export function ContentPanel({
           {isDeploymentRequisitions ? <DeploymentRequisitionsWorkspace /> : null}
 
           {!isHome &&
+<<<<<<< HEAD
             !isUserManagement &&
             !isOutbreakWorkspace &&
             !isSettings &&
@@ -195,6 +196,16 @@ export function ContentPanel({
             !isRrtTeamsPage &&
             !isDeploymentPillars &&
             !isDeploymentRequisitions
+=======
+          !isUserManagement &&
+          !isOutbreakWorkspace &&
+          !isSettings &&
+          !isDeploymentResources &&
+          !isEmployeesPage &&
+          !isRrtDeploymentsPage &&
+          !isRrtTeamsPage &&
+          !isDeploymentPillars
+>>>>>>> 29a47650f87a63801003d66eea5b100747d32023
             ? content.sections.map((section) => (
               <section className={styles.plainSection} key={section.title}>
                 <h2 className={styles.plainSectionTitle}>{section.title}</h2>
