@@ -3,6 +3,7 @@ import { OutbreakWorkspace } from "@/src/features/outbreak/components/outbreak-w
 import { CifMpoxWorkspace } from "@/src/features/cif/components/cif-mpox-workspace";
 import { CifVhfWorkspace } from "@/src/features/cif/components/cif-vhf-workspace";
 import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
+import { DeploymentRequisitionsWorkspace } from "@/src/features/resource-management/components/deployment-requisitions-workspace";
 import styles from "./portal-shell.module.css";
 
 interface ContentPanelProps {
@@ -21,6 +22,7 @@ export function ContentPanel({
   const isOutbreakWorkspace = content?.id === "cif-outbreak";
   const isCifVhf = content?.id === "cif-vhf";
   const isCifMpox = content?.id === "cif-mpox";
+  const isDeploymentRequisitions = content?.id === "deployment-requisitions";
 
   return (
     <section className={styles.contentPanel}>
@@ -60,6 +62,7 @@ export function ContentPanel({
           !isCifVhf &&
           !isCifMpox &&
           !isOutbreakWorkspace &&
+          !isDeploymentRequisitions &&
           content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
@@ -80,6 +83,7 @@ export function ContentPanel({
           !isCifVhf &&
           !isCifMpox &&
           !isOutbreakWorkspace &&
+          !isDeploymentRequisitions &&
           content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
@@ -114,8 +118,9 @@ export function ContentPanel({
           {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
           {isCifVhf ? <CifVhfWorkspace /> : null}
           {isCifMpox ? <CifMpoxWorkspace /> : null}
+          {isDeploymentRequisitions ? <DeploymentRequisitionsWorkspace /> : null}
 
-          {!isHome && !isUserManagement && !isOutbreakWorkspace
+          {!isHome && !isUserManagement && !isOutbreakWorkspace && !isDeploymentRequisitions
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>
