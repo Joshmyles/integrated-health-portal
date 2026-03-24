@@ -54,6 +54,22 @@ export interface PortalEmployeeDirectoryEntry {
   sex: string;
 }
 
+export interface PortalRrtTeamEntry {
+  baseLocation: string;
+  code: string;
+  createdBy: string;
+  id: number;
+  isActive: string;
+  leadEmail: string;
+  leadName: string;
+  leadPhone: string;
+  name: string;
+  size: string;
+  specializations: string;
+  type: string;
+  updatedAt: string;
+}
+
 export interface PortalPageContent {
   dataTable?: PortalDataTable;
   employeeDirectory?: PortalEmployeeDirectoryEntry[];
@@ -62,6 +78,7 @@ export interface PortalPageContent {
   intro: string;
   message?: string;
   records: PortalRecord[];
+  rrtTeams?: PortalRrtTeamEntry[];
   sections: PortalSection[];
   summaryCards?: PortalSummaryCard[];
 }

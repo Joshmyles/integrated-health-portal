@@ -48,6 +48,7 @@ export function EmployeeManagementWorkspace({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEmployeeId, setEditingEmployeeId] = useState<number | null>(null);
   const [searchValue, setSearchValue] = useState("");
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<EmployeeSortKey>("name");
   const [sortAscending, setSortAscending] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -126,6 +127,7 @@ export function EmployeeManagementWorkspace({
 
   function openCreateModal() {
     resetFormState();
+    setStatusMessage(null);
     setIsModalOpen(true);
   }
 
@@ -141,12 +143,14 @@ export function EmployeeManagementWorkspace({
       facility: `${employee.facilityId}`
     });
     setFormError(null);
+    setStatusMessage(null);
     setIsModalOpen(true);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError(null);
+    setStatusMessage(null);
 
     const facilityValue = Number(formState.facility);
 
@@ -178,8 +182,10 @@ export function EmployeeManagementWorkspace({
 
       if (editingEmployeeId) {
         await updateMutation.mutateAsync(payload);
+        setStatusMessage(`Employee ${editingEmployeeId} updated successfully.`);
       } else {
         await createMutation.mutateAsync(payload);
+        setStatusMessage("Employee created successfully.");
       }
 
       closeModal();
@@ -190,9 +196,19 @@ export function EmployeeManagementWorkspace({
 
   async function handleDeleteEmployee(employeeId: number) {
     setFormError(null);
+    setStatusMessage(null);
+
+    const shouldDelete = window.confirm(
+      `Delete employee ${employeeId}? This action cannot be undone.`
+    );
+
+    if (!shouldDelete) {
+      return;
+    }
 
     try {
       await deleteMutation.mutateAsync(employeeId);
+      setStatusMessage(`Employee ${employeeId} deleted successfully.`);
 
       if (editingEmployeeId === employeeId) {
         closeModal();
@@ -296,6 +312,7 @@ export function EmployeeManagementWorkspace({
           </article>
         </div>
 
+        {statusMessage ? <div className={styles.successMessage}>{statusMessage}</div> : null}
         {mutationErrorMessage ? <div className={styles.errorMessage}>{mutationErrorMessage}</div> : null}
 
         <div className={styles.employeeTableViewport}>

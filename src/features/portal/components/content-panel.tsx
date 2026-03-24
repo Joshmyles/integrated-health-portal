@@ -5,6 +5,7 @@ import { CifVhfWorkspace } from '@/src/features/cif/components/cif-vhf-workspace
 import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
 import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
+import { RrtTeamsManagementWorkspace } from '@/src/features/portal/components/rrt-teams-management-workspace';
 import { UserManagementWorkspace } from '@/src/features/users/components/user-management-workspace';
 import styles from './portal-shell.module.css';
 
@@ -28,6 +29,7 @@ export function ContentPanel({
   const isDeploymentPillars = content?.id === 'deployment-pillars';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
+  const isRrtTeamsPage = content?.id === 'deployment-rrt-teams';
 
   return (
     <section className={styles.contentPanel}>
@@ -73,6 +75,7 @@ export function ContentPanel({
           !isCifMpox &&
           !isDeploymentPillars &&
           !isEmployeesPage &&
+          !isRrtTeamsPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
           content.summaryCards?.length ? (
@@ -98,6 +101,7 @@ export function ContentPanel({
           !isCifMpox &&
           !isDeploymentPillars &&
           !isEmployeesPage &&
+          !isRrtTeamsPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
           content.dataTable ? (
@@ -151,13 +155,20 @@ export function ContentPanel({
               title={content.dataTable?.title ?? 'Employee Directory'}
             />
           ) : null}
+          {isRrtTeamsPage && content.rrtTeams?.length ? (
+            <RrtTeamsManagementWorkspace
+              teams={content.rrtTeams}
+              title={content.dataTable?.title ?? 'RRT Team Register'}
+            />
+          ) : null}
           {isSettings ? <SettingsWorkspace /> : null}
 
           {!isHome &&
           !isUserManagement &&
           !isOutbreakWorkspace &&
           !isSettings &&
-          !isEmployeesPage
+          !isEmployeesPage &&
+          !isRrtTeamsPage
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>
