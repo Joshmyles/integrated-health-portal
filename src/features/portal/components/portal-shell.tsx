@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useLogout } from "@/src/features/auth/hooks/use-logout";
 import { AuthRequestError } from "@/src/features/auth/lib/auth-client";
@@ -22,6 +22,8 @@ export function PortalShell({ username }: PortalShellProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [expandedIds, setExpandedIds] = useState<string[]>([]);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
   const [isRoutingOut, startLogoutTransition] = useTransition();
   const logoutMutation = useLogout();
   const logoutError =
@@ -98,6 +100,7 @@ export function PortalShell({ username }: PortalShellProps) {
 
   async function handleLogout() {
     logoutMutation.reset();
+    setUserMenuOpen(false);
 
     try {
       await logoutMutation.mutateAsync();
@@ -110,6 +113,26 @@ export function PortalShell({ username }: PortalShellProps) {
     }
   }
 
+  function handleOpenSettings() {
+    setUserMenuOpen(false);
+    updateSelectedNode("system-settings");
+  }
+
+  // Close user menu on outside click
+  useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleDocumentClick);
+    return () => document.removeEventListener("mousedown", handleDocumentClick);
+  }, []);
+
   return (
     <main className={styles.pageFrame}>
       <section className={styles.desktopWindow}>
@@ -118,44 +141,76 @@ export function PortalShell({ username }: PortalShellProps) {
             {navigationQuery.data?.applicationTitle ?? "MoH Uganda: National Health Portal - Main"}
           </span>
           <div className={styles.titleBarMeta}>
-            <span className={styles.sessionLabel}>Signed in as {username}</span>
-            <button
-              className={styles.logoutButton}
-              disabled={logoutMutation.isPending || isRoutingOut}
-              onClick={handleLogout}
-              type="button"
-            >
-              <span className={styles.logoutIcon} aria-hidden="true">
-                <svg fill="none" height="16" viewBox="0 0 20 20" width="16">
-                  <path
-                    d="M8 4.5H4.8A1.8 1.8 0 0 0 3 6.3v7.4a1.8 1.8 0 0 0 1.8 1.8H8"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.4"
-                  />
-                  <path
-                    d="M11 6.2 15 10l-4 3.8"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="1.4"
-                  />
-                  <path
-                    d="M7 10h8"
-                    stroke="currentColor"
-                    strokeLinecap="round"
-                    strokeWidth="1.4"
-                  />
-                </svg>
-              </span>
-              <span className={styles.logoutCopy}>
-                <span className={styles.logoutLabel}>
-                  {logoutMutation.isPending || isRoutingOut ? "Signing out..." : "Log out"}
+            <div className={styles.userMenu} ref={userMenuRef}>
+              <button
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
+                className={styles.userMenuButton}
+                disabled={logoutMutation.isPending || isRoutingOut}
+                onClick={() => setUserMenuOpen((v) => !v)}
+                type="button"
+              >
+                <span className={styles.userMenuIcon} aria-hidden="true">
+                  <svg fill="none" height="14" viewBox="0 0 20 20" width="14">
+                    <circle cx="10" cy="6.5" r="3.5" stroke="currentColor" strokeWidth="1.4" />
+                    <path
+                      d="M3 17c0-3.314 3.134-6 7-6s7 2.686 7 6"
+                      stroke="currentColor"
+                      strokeLinecap="round"
+                      strokeWidth="1.4"
+                    />
+                  </svg>
                 </span>
-                <span className={styles.logoutMeta}>Local + response session</span>
-              </span>
-            </button>
+                <span className={styles.userMenuName}>{username}</span>
+                <span className={styles.userMenuChevron} aria-hidden="true">
+                  <svg fill="currentColor" height="10" viewBox="0 0 10 10" width="10">
+                    <path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" />
+                  </svg>
+                </span>
+              </button>
+
+              {userMenuOpen && (
+                <div className={styles.userMenuDropdown} role="menu">
+                  <button
+                    className={styles.userMenuDropdownItem}
+                    onClick={handleOpenSettings}
+                    type="button"
+                  >
+                    <span className={styles.userMenuDropdownIcon} aria-hidden="true">
+                      <svg fill="none" height="13" viewBox="0 0 20 20" width="13">
+                        <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.4" />
+                        <path
+                          d="M10 2v1.5M10 16.5V18M18 10h-1.5M3.5 10H2M15.36 4.64l-1.06 1.06M5.7 14.3l-1.06 1.06M15.36 15.36l-1.06-1.06M5.7 5.7 4.64 4.64"
+                          stroke="currentColor"
+                          strokeLinecap="round"
+                          strokeWidth="1.4"
+                        />
+                      </svg>
+                    </span>
+                    Settings
+                  </button>
+                  <div className={styles.userMenuDivider} />
+                  <button
+                    className={styles.userMenuDropdownItem}
+                    disabled={logoutMutation.isPending || isRoutingOut}
+                    onClick={handleLogout}
+                    type="button"
+                  >
+                    <span className={styles.userMenuDropdownIcon} aria-hidden="true">
+                      <svg fill="none" height="13" viewBox="0 0 20 20" width="13">
+                        <path
+                          d="M8 4.5H4.8A1.8 1.8 0 0 0 3 6.3v7.4a1.8 1.8 0 0 0 1.8 1.8H8"
+                          stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4"
+                        />
+                        <path d="M11 6.2 15 10l-4 3.8" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.4" />
+                        <path d="M7 10h8" stroke="currentColor" strokeLinecap="round" strokeWidth="1.4" />
+                      </svg>
+                    </span>
+                    {logoutMutation.isPending || isRoutingOut ? "Signing out..." : "Log out"}
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </header>
 

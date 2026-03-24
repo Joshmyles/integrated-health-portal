@@ -41,8 +41,22 @@ export interface PortalDataTable {
   title: string;
 }
 
+export interface PortalEmployeeDirectoryEntry {
+  cadre: string;
+  email: string;
+  facilityId: number;
+  facilityName: string;
+  firstName: string;
+  fullName: string;
+  id: number;
+  lastName: string;
+  phone: string;
+  sex: string;
+}
+
 export interface PortalPageContent {
   dataTable?: PortalDataTable;
+  employeeDirectory?: PortalEmployeeDirectoryEntry[];
   id: string;
   title: string;
   intro: string;

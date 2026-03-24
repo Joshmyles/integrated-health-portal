@@ -49,60 +49,108 @@
   margin-left: auto;
 }
 
-.sessionLabel {
-  color: var(--legacy-muted);
-  font-size: 11px;
+/* ── User menu ─────────────────────────────────────────────────────────── */
+.userMenu {
+  position: relative;
 }
 
-.logoutButton {
+.userMenuButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 28px;
+  gap: 6px;
+  min-height: 26px;
   border: 1px solid var(--legacy-border-dark);
   background: linear-gradient(180deg, #fcfcfc 0%, #e6e6e6 100%);
   cursor: pointer;
-  padding: 3px 10px 3px 8px;
+  padding: 2px 8px 2px 7px;
   box-shadow:
     inset 1px 1px 0 #ffffff,
     inset -1px -1px 0 #c9c9c9;
   color: #17384a;
   font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.logoutButton:hover:not(:disabled) {
+.userMenuButton:hover:not(:disabled) {
   background: linear-gradient(180deg, #ffffff 0%, #ececec 100%);
   color: #102a37;
 }
 
-.logoutButton:disabled {
+.userMenuButton:disabled {
   cursor: wait;
   color: #666666;
 }
 
-.logoutIcon {
+.userMenuIcon,
+.userMenuChevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
   flex: 0 0 auto;
 }
 
-.logoutCopy {
+.userMenuName {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userMenuDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 160px;
+  border: 1px solid var(--legacy-border-dark);
+  background: #f3f3f3;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #d7d7d7,
+    0 10px 20px rgba(0, 0, 0, 0.14);
+  padding: 4px;
+}
+
+.userMenuDropdownItem {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.05;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #222222;
+  cursor: pointer;
+  padding: 0 9px;
+  font-size: 11px;
+  text-align: left;
 }
 
-.logoutLabel {
-  font-weight: 700;
+.userMenuDropdownItem:hover:not(:disabled) {
+  border-color: var(--legacy-border-dark);
+  background: linear-gradient(180deg, #f9f9f9 0%, #e8e8e8 100%);
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c9c9c9;
 }
 
-.logoutMeta {
-  color: var(--legacy-muted);
-  font-size: 10px;
+.userMenuDropdownItem:disabled {
+  cursor: wait;
+  color: #888888;
+}
+
+.userMenuDropdownIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #555555;
+}
+
+.userMenuDivider {
+  height: 1px;
+  background: #d0d0d0;
+  margin: 3px 0;
 }
 
 .sessionErrorBanner {
@@ -433,6 +481,370 @@
   line-height: 1.5;
 }
 
+.employeeManagementWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.employeeToolbar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.employeeFilterBar {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) auto;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.employeeFilterField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.employeeSortGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.employeeSortButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.employeeForm {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+}
+
+.employeeFormField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.employeeFormLabel {
+  color: #444444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.employeeFormInput {
+  min-height: 28px;
+  border: 1px solid #a8a8a8;
+  background: #ffffff;
+  padding: 4px 6px;
+  color: #111111;
+  font-size: 12px;
+  box-shadow: inset 1px 1px 0 #f7f7f7;
+}
+
+.employeeFormActions {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.employeeSubmitButton {
+  min-height: 30px;
+  border: 1px solid var(--legacy-border-dark);
+  background: linear-gradient(180deg, #fcfcfc 0%, #e6e6e6 100%);
+  cursor: pointer;
+  padding: 4px 12px;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c9c9c9;
+  color: #17384a;
+  font-size: 12px;
+}
+
+.employeeSecondaryButton {
+  min-height: 30px;
+  border: 1px solid var(--legacy-border-dark);
+  background: linear-gradient(180deg, #f6f6f6 0%, #dfdfdf 100%);
+  cursor: pointer;
+  padding: 4px 12px;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c9c9c9;
+  color: #2b3f49;
+  font-size: 12px;
+}
+
+.employeeSecondaryButton:disabled,
+.employeeSubmitButton:disabled {
+  cursor: wait;
+  color: #666666;
+}
+
+.employeeTableRowSelected {
+  background: #e9f2f8 !important;
+}
+
+.employeeTableViewport {
+  max-width: 100%;
+}
+
+.employeeActionsHeader,
+.employeeActionsCell {
+  position: sticky;
+  right: 0;
+  background: #ffffff;
+}
+
+.employeeActionsHeader {
+  z-index: 2;
+}
+
+.employeeActionsCell {
+  z-index: 1;
+}
+
+.employeeRowActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.employeeRowButton,
+.employeeDeleteButton {
+  min-height: 24px;
+  border: 1px solid var(--legacy-border-dark);
+  cursor: pointer;
+  padding: 2px 8px;
+  font-size: 11px;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c9c9c9;
+}
+
+.employeeRowButton {
+  background: linear-gradient(180deg, #f5f5f5 0%, #e1e1e1 100%);
+  color: #203843;
+}
+
+.employeeDeleteButton {
+  background: linear-gradient(180deg, #fff0f0 0%, #e9cfcf 100%);
+  color: #7b2323;
+}
+
+.employeeDeleteButton:disabled {
+  cursor: wait;
+  color: #666666;
+}
+
+.employeeEmptyState {
+  padding: 18px 8px;
+  color: var(--legacy-muted);
+  text-align: center;
+}
+
+.employeePagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.employeePaginationMeta {
+  color: #4d4d4d;
+  font-size: 11px;
+}
+
+.employeePaginationButtons {
+  display: flex;
+  gap: 8px;
+}
+
+.employeeModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(12, 27, 36, 0.38);
+}
+
+.employeeModal {
+  width: min(880px, 100%);
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid #9f9f9f;
+  background: #ffffff;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    0 16px 36px rgba(0, 0, 0, 0.18);
+}
+
+.employeeModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.employeeModalClose {
+  min-width: 28px;
+  min-height: 28px;
+  border: 1px solid var(--legacy-border-dark);
+  background: linear-gradient(180deg, #f6f6f6 0%, #dfdfdf 100%);
+  cursor: pointer;
+  padding: 0;
+  color: #223841;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.employeeWorkspace {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.employeeControlBar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.employeeControl {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.employeeControlLabel {
+  color: #444444;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.employeeInput,
+.employeeSelect {
+  min-height: 28px;
+  border: 1px solid #a8a8a8;
+  background: #ffffff;
+  padding: 4px 6px;
+  color: #111111;
+  font-size: 12px;
+  box-shadow: inset 1px 1px 0 #f7f7f7;
+}
+
+.employeeLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(260px, 0.8fr);
+  gap: 12px;
+  min-height: 0;
+}
+
+.employeeResultsPanel,
+.employeeDetailPanel {
+  border: 1px solid #b7b7b7;
+  background: #fcfcfc;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #e0e0e0;
+}
+
+.employeeResultsPanel {
+  padding: 10px;
+}
+
+.employeeDetailPanel {
+  padding: 10px 12px;
+}
+
+.employeeGroup + .employeeGroup {
+  margin-top: 12px;
+}
+
+.employeeGroupTitle,
+.employeeDetailTitle {
+  margin: 0 0 8px;
+  color: #111111;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.employeeList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.employeeListItem {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 1px solid #cfcfcf;
+  background: linear-gradient(180deg, #fdfdfd 0%, #f3f3f3 100%);
+  color: #111111;
+  cursor: pointer;
+  text-align: left;
+}
+
+.employeeListItem:hover {
+  background: linear-gradient(180deg, #ffffff 0%, #f0f0f0 100%);
+}
+
+.employeeListItemSelected {
+  border-color: #8aa7bd;
+  background: linear-gradient(180deg, #eef5fa 0%, #dfeef7 100%);
+}
+
+.employeeListPrimary {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.employeeListSecondary {
+  color: #4a4a4a;
+  font-size: 11px;
+}
+
+.employeeDetailList {
+  margin: 0;
+}
+
+.employeeDetailRow {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid #e2e2e2;
+}
+
+.employeeDetailRow:last-child {
+  border-bottom: none;
+}
+
+.employeeDetailLabel,
+.employeeDetailValue {
+  margin: 0;
+  font-size: 12px;
+}
+
+.employeeDetailLabel {
+  font-weight: 700;
+}
+
 @media (max-width: 960px) {
   .desktopWindow {
     min-height: 100dvh;
@@ -458,10 +870,24 @@
   .workspaceDivider {
     display: none;
   }
+
+  .employeeToolbar,
+  .employeePagination {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .employeeFilterBar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .employeeLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 @media (max-width: 560px) {
-  .sessionLabel {
-    display: none;
+  .userMenuName {
+    max-width: 80px;
   }
 }
