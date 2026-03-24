@@ -1276,25 +1276,6 @@ const portalContentById: Record<string, PortalPageContent> = {
     owner: "Operations Shift Lead",
     intro:
       "Activity logs capture the running narrative of deployment work so teams can understand what happened, where, and what still needs action.",
-    dataTable: {
-      title: "Recent Activity Logs",
-      caption: "Representative field activity entries for the deployment workspace",
-      columns: ["Time", "Pillar", "Location", "Activity", "Logged by", "Status"],
-      rows: [
-        {
-          id: "activity-001",
-          cells: ["24 Mar 2026, 09:05", "Logistics", "Arua", "Delivered PPE to holding site", "J. Auma", "Closed"]
-        },
-        {
-          id: "activity-002",
-          cells: ["24 Mar 2026, 08:31", "Surveillance", "Gulu", "Briefed district surveillance team", "RRT North", "Open"]
-        },
-        {
-          id: "activity-003",
-          cells: ["23 Mar 2026, 19:42", "Case Management", "Kampala", "Transferred isolation supplies", "M. Kasozi", "Closed"]
-        }
-      ]
-    },
     actions: [
       "Create logs quickly during field work without opening unrelated deployment data.",
       "Review recent operational events during handover and coordination calls.",
