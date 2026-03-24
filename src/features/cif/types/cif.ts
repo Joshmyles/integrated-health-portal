@@ -57,3 +57,13 @@ export interface VhfPatient {
 export interface VhfPatientsResponse {
   patients: VhfPatient[];
 }
+
+export interface MpoxPatient {
+  id: number;
+  patient_name: string;
+  status: string;
+}
+
+export interface MpoxPatientsResponse {
+  mpox_patients: MpoxPatient[];
+}

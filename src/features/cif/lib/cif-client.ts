@@ -1,4 +1,7 @@
-import type { VhfPatientsResponse } from "@/src/features/cif/types/cif";
+import type {
+  MpoxPatientsResponse,
+  VhfPatientsResponse
+} from "@/src/features/cif/types/cif";
 
 interface ErrorPayload {
   message?: string;
@@ -43,4 +46,8 @@ async function requestJson<T>(path: string): Promise<T> {
 
 export function fetchVhfPatients() {
   return requestJson<VhfPatientsResponse>("/api/vhf/patients");
+}
+
+export function fetchMpoxPatients() {
+  return requestJson<MpoxPatientsResponse>("/api/mpox/patients");
 }
