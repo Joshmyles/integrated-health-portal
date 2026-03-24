@@ -5,6 +5,7 @@ import { CifVhfWorkspace } from '@/src/features/cif/components/cif-vhf-workspace
 import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
 import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
+import { ResourcesWorkspace } from '@/src/features/resource-management/components/resources-workspace';
 import { UserManagementWorkspace } from '@/src/features/users/components/user-management-workspace';
 import styles from './portal-shell.module.css';
 
@@ -26,6 +27,7 @@ export function ContentPanel({
   const isSettings = content?.id === 'system-settings';
   const isCifMpox = content?.id === 'cif-mpox';
   const isDeploymentPillars = content?.id === 'deployment-pillars';
+  const isDeploymentResources = content?.id === 'deployment-resources';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
 
@@ -72,6 +74,7 @@ export function ContentPanel({
           !isCifVhf &&
           !isCifMpox &&
           !isDeploymentPillars &&
+          !isDeploymentResources &&
           !isEmployeesPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
@@ -97,6 +100,7 @@ export function ContentPanel({
           !isCifVhf &&
           !isCifMpox &&
           !isDeploymentPillars &&
+          !isDeploymentResources &&
           !isEmployeesPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
@@ -145,6 +149,7 @@ export function ContentPanel({
           {isCifVhf ? <CifVhfWorkspace /> : null}
           {isCifMpox ? <CifMpoxWorkspace /> : null}
           {isDeploymentPillars ? <PillarsWorkspace /> : null}
+          {isDeploymentResources ? <ResourcesWorkspace /> : null}
           {isEmployeesPage && content.employeeDirectory?.length ? (
             <EmployeeManagementWorkspace
               employees={content.employeeDirectory}
