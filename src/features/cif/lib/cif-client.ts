@@ -1,4 +1,16 @@
-import type { VhfPatientsResponse } from "@/src/features/cif/types/cif";
+import type {
+  VhfClinicalSignsResponse,
+  VhfHospitalizationResponse,
+  VhfInvestigatorResponse,
+  VhfMutationResponse,
+  VhfLaboratoryResponse,
+  VhfPatientDetailResponse,
+  VhfPatientsResponse,
+  VhfPatientWritePayload,
+  VhfRiskFactorsResponse,
+  VhfSectionKey,
+  VhfSectionWritePayload
+} from "@/src/features/cif/types/cif";
 
 interface ErrorPayload {
   message?: string;
@@ -22,10 +34,12 @@ async function readJson<T>(response: Response): Promise<T | null> {
   }
 }
 
-async function requestJson<T>(path: string): Promise<T> {
+async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(path, {
+    ...init,
     headers: {
-      Accept: "application/json"
+      Accept: "application/json",
+      ...(init?.headers ?? {})
     }
   });
 
@@ -41,6 +55,60 @@ async function requestJson<T>(path: string): Promise<T> {
   return (payload ?? {}) as T;
 }
 
+function createJsonRequest(path: string, method: string, payload?: object) {
+  return requestJson<VhfMutationResponse>(path, {
+    method,
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: payload === undefined ? undefined : JSON.stringify(payload)
+  });
+}
+
 export function fetchVhfPatients() {
   return requestJson<VhfPatientsResponse>("/api/vhf/patients");
+}
+
+export function fetchVhfPatientDetail(patientId: number) {
+  return requestJson<VhfPatientDetailResponse>(`/api/vhf/patients/${patientId}`);
+}
+
+export function createVhfPatient(payload: VhfPatientWritePayload) {
+  return createJsonRequest("/api/vhf/patients", "POST", payload);
+}
+
+export function updateVhfPatient(patientId: number, payload: VhfPatientWritePayload) {
+  return createJsonRequest(`/api/vhf/patients/${patientId}`, "PUT", payload);
+}
+
+export function deleteVhfPatient(patientId: number) {
+  return createJsonRequest(`/api/vhf/patients/${patientId}`, "DELETE");
+}
+
+export function fetchVhfClinicalSigns(patientId: number) {
+  return requestJson<VhfClinicalSignsResponse>(`/api/vhf/patients/${patientId}/clinical-signs`);
+}
+
+export function fetchVhfHospitalization(patientId: number) {
+  return requestJson<VhfHospitalizationResponse>(`/api/vhf/patients/${patientId}/hospitalization`);
+}
+
+export function fetchVhfInvestigator(patientId: number) {
+  return requestJson<VhfInvestigatorResponse>(`/api/vhf/patients/${patientId}/investigator`);
+}
+
+export function fetchVhfLaboratory(patientId: number) {
+  return requestJson<VhfLaboratoryResponse>(`/api/vhf/patients/${patientId}/laboratory`);
+}
+
+export function fetchVhfRiskFactors(patientId: number) {
+  return requestJson<VhfRiskFactorsResponse>(`/api/vhf/patients/${patientId}/risk-factors`);
+}
+
+export function saveVhfSection(
+  patientId: number,
+  section: VhfSectionKey,
+  payload: VhfSectionWritePayload
+) {
+  return createJsonRequest(`/api/vhf/patients/${patientId}/${section}`, "POST", payload);
 }

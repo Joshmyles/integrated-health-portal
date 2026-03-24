@@ -11,7 +11,9 @@
 
 .summaryCard,
 .panel,
-.detailCard {
+.detailCard,
+.formPanel,
+.modalWindow {
   border: 1px solid #b7b7b7;
   background: linear-gradient(180deg, #fdfdfd 0%, #f1f1f1 100%);
   box-shadow:
@@ -48,8 +50,7 @@
   padding: 9px;
 }
 
-.panelHeader,
-.detailHeader {
+.panelHeader {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -64,7 +65,8 @@
   font-weight: 700;
 }
 
-.panelCopy {
+.panelCopy,
+.formPanelCopy {
   margin: 0;
   color: #555555;
   font-size: 11px;
@@ -77,10 +79,16 @@
   font-size: 11px;
 }
 
-.resultMeta {
+.resultMeta,
+.toolbarActions,
+.formActions,
+.modalTitleActions {
   display: inline-flex;
   flex-wrap: wrap;
   gap: 6px;
+}
+
+.resultMeta {
   color: #555555;
   font-size: 11px;
 }
@@ -93,7 +101,7 @@
 
 .toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 180px;
+  grid-template-columns: minmax(0, 1fr) 180px auto;
   gap: 10px;
   margin-bottom: 10px;
 }
@@ -110,11 +118,26 @@
   font-weight: 700;
 }
 
+.fieldHint {
+  margin: 0;
+  color: #666666;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
 .textInput,
 .selectInput,
-.caseButton {
+.textArea,
+.codeArea,
+.caseButton,
+.smallButton,
+.actionButton,
+.secondaryButton,
+.modalCloseButton,
+.dangerButton,
+.moreButton,
+.tabButton {
   border: 1px solid var(--legacy-border-dark);
-  background: #ffffff;
   color: #111111;
   font-size: 12px;
   box-shadow:
@@ -123,21 +146,109 @@
 }
 
 .textInput,
+.selectInput,
+.textArea,
+.codeArea {
+  background: #ffffff;
+}
+
+.textInput,
 .selectInput {
   min-height: 30px;
   padding: 0 8px;
 }
 
+.textArea,
+.codeArea {
+  width: 100%;
+  padding: 8px;
+  resize: vertical;
+}
+
+.codeArea {
+  font-family: "Courier New", Courier, monospace;
+  line-height: 1.45;
+}
+
 .textInput:focus,
 .selectInput:focus,
-.caseButton:focus {
+.textArea:focus,
+.codeArea:focus,
+.caseButton:focus,
+.smallButton:focus,
+.actionButton:focus,
+.secondaryButton:focus,
+.modalCloseButton:focus,
+.dangerButton:focus,
+.moreButton:focus,
+.tabButton:focus {
   outline: 1px solid var(--legacy-accent);
   outline-offset: 1px;
 }
 
+.smallButton,
+.actionButton,
+.secondaryButton,
+.modalCloseButton,
+.dangerButton {
+  min-height: 30px;
+  cursor: pointer;
+  padding: 0 10px;
+  background: linear-gradient(180deg, #ffffff 0%, #e7ecef 100%);
+}
+
+.secondaryButton {
+  background: linear-gradient(180deg, #ffffff 0%, #ececec 100%);
+}
+
+.smallButton,
+.modalCloseButton,
+.moreButton {
+  background: linear-gradient(180deg, #f9f9f9 0%, #e4e4e4 100%);
+}
+
+.smallButton {
+  min-height: 26px;
+  padding: 0 9px;
+}
+
+.dangerButton {
+  background: linear-gradient(180deg, #fff5f5 0%, #efd4d4 100%);
+  color: #7b2626;
+}
+
+.moreButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  min-height: 26px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.moreDots {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.smallButton:disabled,
+.actionButton:disabled,
+.secondaryButton:disabled,
+.modalCloseButton:disabled,
+.dangerButton:disabled,
+.moreButton:disabled,
+.tabButton:disabled {
+  cursor: not-allowed;
+  color: #777777;
+}
+
 .statusMessage,
 .errorMessage,
-.emptyState {
+.successMessage,
+.emptyState,
+.inlineNote {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
@@ -151,11 +262,20 @@
   color: #8e2929;
 }
 
-.emptyState {
-  color: #555555;
+.successMessage {
+  color: #23613a;
+}
+
+.emptyState,
+.inlineNote {
   border: 1px solid #c9c9c9;
   background: #fbfbfb;
   padding: 12px;
+}
+
+.inlineNote {
+  margin-top: 8px;
+  color: #4e4e4e;
 }
 
 .tableWrap {
@@ -166,7 +286,7 @@
 
 .table {
   width: 100%;
-  min-width: 1080px;
+  min-width: 1180px;
   border-collapse: collapse;
   font-size: 12px;
 }
@@ -202,6 +322,67 @@
   background: #e9f2f6 !important;
 }
 
+.actionsHeader {
+  width: 130px;
+  text-align: center;
+}
+
+.actionsCell {
+  position: relative;
+  white-space: nowrap;
+}
+
+.actionsMenuWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 3px);
+  right: 0;
+  z-index: 5;
+  min-width: 168px;
+  border: 1px solid var(--legacy-border-dark);
+  background: #f3f3f3;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #d7d7d7,
+    0 10px 18px rgba(0, 0, 0, 0.12);
+  padding: 3px;
+}
+
+.dropdownItem {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin-bottom: 3px;
+  border: 1px solid var(--legacy-border-dark);
+  background: linear-gradient(180deg, #f9f9f9 0%, #e4e4e4 100%);
+  cursor: pointer;
+  padding: 0 9px;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c9c9c9;
+  color: #222222;
+  font-size: 11px;
+  text-align: left;
+}
+
+.dropdownItem:last-child {
+  margin-bottom: 0;
+}
+
+.dropdownItem:hover:not(:disabled) {
+  background: linear-gradient(180deg, #ffffff 0%, #ececec 100%);
+}
+
+.dropdownItemDanger {
+  color: #7b2626;
+}
+
 .caseButton {
   display: flex;
   width: 100%;
@@ -210,6 +391,7 @@
   cursor: pointer;
   padding: 5px 7px;
   text-align: left;
+  background: #ffffff;
 }
 
 .caseButton:hover {
@@ -253,10 +435,149 @@
   color: #6d4527;
 }
 
-.stateStack {
+.modalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(28, 37, 44, 0.3);
+  padding: 18px;
+}
+
+.modalWindow {
+  width: min(1200px, 100%);
+  max-height: calc(100dvh - 36px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.modalTitleBar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid #c7c7c7;
+  background: linear-gradient(180deg, #f6f6f6 0%, #ebebeb 100%);
+}
+
+.modalTitle {
+  margin: 0 0 3px;
+  color: #000000;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.modalSubtitle {
+  color: #555555;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.modalTabStrip {
   display: flex;
   flex-wrap: wrap;
-  gap: 5px;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #d0d0d0;
+  background: #f6f6f6;
+}
+
+.tabButton {
+  min-height: 28px;
+  padding: 0 10px;
+  cursor: pointer;
+  background: linear-gradient(180deg, #fafafa 0%, #e7e7e7 100%);
+}
+
+.tabButtonActive {
+  background: linear-gradient(180deg, #ffffff 0%, #dae8ee 100%);
+  color: #17384a;
+}
+
+.modalBody {
+  overflow: auto;
+  padding: 10px 12px 14px;
+  background: #f8f8f8;
+}
+
+.editorStack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.formPanel {
+  padding: 9px;
+}
+
+.formPanelHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 10px 12px;
+}
+
+.checkboxField {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 30px;
+}
+
+.checkboxLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #111111;
+  font-size: 12px;
+}
+
+.symptomTable {
+  display: grid;
+  grid-template-columns: 78px minmax(180px, 1fr) 160px 160px;
+  gap: 0;
+  border: 1px solid #cfcfcf;
+  background: #ffffff;
+}
+
+.symptomHeader,
+.symptomCell,
+.symptomCellLabel {
+  border-right: 1px solid #d4d4d4;
+  border-bottom: 1px solid #d4d4d4;
+  padding: 6px 8px;
+  font-size: 12px;
+}
+
+.symptomHeader {
+  background: linear-gradient(180deg, #f4f4f4 0%, #e2e2e2 100%);
+  font-weight: 700;
+}
+
+.symptomRow {
+  display: contents;
+}
+
+.symptomCell {
+  display: flex;
+  align-items: center;
+}
+
+.symptomCellLabel {
+  display: flex;
+  align-items: center;
+  background: #fcfcfc;
 }
 
 .detailGrid {
@@ -300,15 +621,63 @@
   line-height: 1.4;
 }
 
+.tableFootnote {
+  margin-top: 8px;
+  color: #5d5d5d;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+@media (max-width: 1100px) {
+  .toolbar {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .toolbarActions {
+    grid-column: 1 / -1;
+  }
+
+  .symptomTable {
+    grid-template-columns: 64px minmax(150px, 1fr) 140px 140px;
+  }
+}
+
 @media (max-width: 900px) {
+  .detailGrid,
   .toolbar,
-  .detailGrid {
+  .formGrid {
     grid-template-columns: minmax(0, 1fr);
   }
 
   .panelHeader,
-  .detailHeader {
+  .formPanelHeader,
+  .modalTitleBar {
     flex-direction: column;
+  }
+
+  .symptomTable {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .symptomHeader {
+    display: none;
+  }
+
+  .symptomCell,
+  .symptomCellLabel {
+    border-right: none;
+  }
+
+  .symptomRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    border-bottom: 1px solid #d4d4d4;
+  }
+
+  .symptomCell,
+  .symptomCellLabel {
+    padding-top: 4px;
+    padding-bottom: 4px;
   }
 }
 
@@ -316,5 +685,23 @@
   .summaryGrid,
   .metaGrid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .toolbarActions,
+  .formActions,
+  .modalTitleActions {
+    width: 100%;
+  }
+
+  .smallButton,
+  .actionButton,
+  .secondaryButton,
+  .modalCloseButton,
+  .dangerButton {
+    flex: 1 1 auto;
+  }
+
+  .modalBackdrop {
+    padding: 10px;
   }
 }

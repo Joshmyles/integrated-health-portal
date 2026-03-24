@@ -100,7 +100,21 @@ const portalTree: PortalTreeNode[] = [
       },
       { id: "contact-tracing", label: "Contact Tracing", kind: "item" },
       { id: "case-management", label: "Case Management", kind: "item" },
-      { id: "deployment", label: "Deployment", kind: "item" },
+      {
+        id: "deployment",
+        label: "Deployment",
+        kind: "group",
+        children: [
+          { id: "deployment-home", label: "Home", kind: "item" },
+          { id: "deployment-summary", label: "Summary", kind: "item" },
+          { id: "deployment-pillars", label: "Pillars", kind: "item" },
+          { id: "deployment-activity-logs", label: "Activity Logs", kind: "item" },
+          { id: "deployment-requisitions", label: "Requisitions", kind: "item" },
+          { id: "deployment-resources", label: "Resources", kind: "item" },
+          { id: "deployment-rrt-deployments", label: "RRT Deployments", kind: "item" },
+          { id: "deployment-rrt-teams", label: "RRT Teams", kind: "item" }
+        ]
+      },
       { id: "quarantine", label: "Quarantine", kind: "item" }
     ]
   },
@@ -839,6 +853,28 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Cache page data with TanStack Query for snappier repeat access."
     ]
   }),
+  deployment: createGroupPage({
+    id: "deployment",
+    title: "Deployment",
+    intro:
+      "Deployment is now arranged as a folder so resource-management APIs can live in clear operational files instead of one long catch-all page.",
+    owner: "Emergency Operations Center",
+    modules: [
+      "Home",
+      "Summary",
+      "Pillars",
+      "Activity Logs",
+      "Requisitions",
+      "Resources",
+      "RRT Deployments",
+      "RRT Teams"
+    ],
+    process: [
+      "Open Home or Summary first to understand the operational picture before editing detailed records.",
+      "Use the dedicated files so each API family has one predictable place in the outbreak tree.",
+      "Keep field users on short, familiar navigation paths that match the backend resource boundaries."
+    ]
+  }),
   cif: createGroupPage({
     id: "cif",
     title: "CIF",
@@ -1068,22 +1104,290 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Review unresolved escalations before shift change."
     ]
   }),
-  deployment: createLeafPage({
-    id: "deployment",
-    title: "Deployment",
-    source: "Emergency field deployment records",
+  "deployment-home": createLeafPage({
+    id: "deployment-home",
+    title: "Home",
+    source: "Resource management operational index",
     cadence: "Live operational update",
     owner: "Emergency Operations Center",
-    intro: "Manage team movement, field assignments, and logistics in a lean interface that feels close to the original portal.",
+    intro:
+      "The deployment home file gives operations teams a stable starting point for logistics, teams, activity records, and rapid response movement.",
+    summaryCards: [
+      { label: "API groups", value: "7", note: "Operational files mapped to the current resource-management endpoints" },
+      { label: "Core entities", value: "6", note: "Pillars, logs, requisitions, resources, deployments, and teams" },
+      { label: "Shared owner", value: "EOC", note: "Emergency Operations Center coordinates the deployment workspace" },
+      { label: "Mode", value: "Folder", note: "Designed for smaller pages instead of one long scrolling surface" }
+    ],
+    dataTable: {
+      title: "Deployment Folder Map",
+      caption: "Operational grouping for the deployment and resource-management APIs",
+      columns: ["File", "API family", "Primary purpose", "Typical actions"],
+      rows: [
+        {
+          id: "deployment-map-001",
+          cells: ["Summary", "/api/resource-management/summary", "Roll-up status", "Review totals and operational balance"]
+        },
+        {
+          id: "deployment-map-002",
+          cells: ["Pillars", "/api/pillars + /api/resource-management/pillars", "Organize response pillars", "List, create, edit, archive"]
+        },
+        {
+          id: "deployment-map-003",
+          cells: ["Activity Logs", "/api/resource-management/activity-logs", "Capture field activity", "List, create, update, delete"]
+        },
+        {
+          id: "deployment-map-004",
+          cells: ["Requisitions", "/api/resource-management/requisitions", "Track requests", "Review demand, approve, fulfill"]
+        },
+        {
+          id: "deployment-map-005",
+          cells: ["Resources", "/api/resource-management/resources", "Manage stock and assets", "Register, adjust, retire"]
+        },
+        {
+          id: "deployment-map-006",
+          cells: ["RRT Deployments", "/api/resource-management/rrt-deployments", "Manage dispatches", "Schedule, update, close"]
+        },
+        {
+          id: "deployment-map-007",
+          cells: ["RRT Teams", "/api/resource-management/rrt-teams", "Maintain teams", "Create, edit, activate, remove"]
+        }
+      ]
+    },
     actions: [
-      "Review active deployments and staffing coverage.",
-      "Track district requests against available teams.",
-      "Prepare handover notes for incoming operations staff."
+      "Start with the folder view before moving into the specific resource file you need.",
+      "Keep API-aligned data grouped so operators do not have to interpret mixed tables.",
+      "Use the smaller files to preserve the original portal rhythm and reduce scrolling fatigue."
     ],
     checks: [
-      "Confirm assignment dates and destinations are current.",
-      "Validate each deployment has a named lead and support roster.",
-      "Review transport or accommodation blockers before dispatch."
+      "Confirm each deployment subfile lines up with a real backend API family.",
+      "Keep naming consistent between the tree, page title, and endpoint purpose.",
+      "Avoid overloading one file with multiple unrelated resource workflows."
+    ]
+  }),
+  "deployment-summary": createLeafPage({
+    id: "deployment-summary",
+    title: "Summary",
+    source: "/api/resource-management/summary",
+    cadence: "Live roll-up refresh",
+    owner: "Emergency Operations Center",
+    intro:
+      "Use the summary file for high-level operational totals before drilling down into the individual deployment data sets.",
+    summaryCards: [
+      { label: "Open requisitions", value: "18", note: "Requests waiting for fulfillment or approval" },
+      { label: "Available resources", value: "246", note: "Tracked items currently marked available" },
+      { label: "Active RRTs", value: "9", note: "Rapid response deployments still in progress" },
+      { label: "Recent logs", value: "34", note: "Field activity entries posted in the current shift window" }
+    ],
+    actions: [
+      "Review roll-up indicators before entering record-level files.",
+      "Spot pressure points in stock, team availability, and pending requests.",
+      "Use the summary as the operational briefing view for shift handover."
+    ],
+    checks: [
+      "Confirm totals reconcile with the detailed files.",
+      "Watch for spikes that indicate delayed approvals or supply gaps.",
+      "Validate that active deployment counts match the team roster."
+    ]
+  }),
+  "deployment-pillars": createLeafPage({
+    id: "deployment-pillars",
+    title: "Pillars",
+    source: "/api/pillars and /api/resource-management/pillars",
+    cadence: "As coordination structures change",
+    owner: "Incident Coordination Desk",
+    intro:
+      "The pillars file organizes response workstreams so resources, teams, and activity can be grouped against the right operational pillar.",
+    dataTable: {
+      title: "Pillar Records",
+      caption: "Representative structure for listing and maintaining response pillars",
+      columns: ["Pillar", "Lead", "District scope", "Status", "Updated"],
+      rows: [
+        { id: "pillar-001", cells: ["Surveillance", "Dr. Namugenyi", "National", "Active", "24 Mar 2026, 08:40"] },
+        { id: "pillar-002", cells: ["Case Management", "Dr. Ojara", "Regional", "Active", "24 Mar 2026, 08:12"] },
+        { id: "pillar-003", cells: ["Logistics", "P. Atuhairwe", "National", "Standby", "23 Mar 2026, 17:25"] }
+      ]
+    },
+    actions: [
+      "List and review existing pillars before assigning dependent records.",
+      "Create new pillars only when the response structure truly changes.",
+      "Update lead and status fields so downstream deployment data remains grouped correctly."
+    ],
+    checks: [
+      "Confirm pillar names stay canonical across all resource files.",
+      "Avoid duplicate pillars with slightly different spelling.",
+      "Review whether inactive pillars still have linked resources or teams."
+    ]
+  }),
+  "deployment-activity-logs": createLeafPage({
+    id: "deployment-activity-logs",
+    title: "Activity Logs",
+    source: "/api/resource-management/activity-logs",
+    cadence: "Continuous operational entry",
+    owner: "Operations Shift Lead",
+    intro:
+      "Activity logs capture the running narrative of deployment work so teams can understand what happened, where, and what still needs action.",
+    dataTable: {
+      title: "Recent Activity Logs",
+      caption: "Representative field activity entries for the deployment workspace",
+      columns: ["Time", "Pillar", "Location", "Activity", "Logged by", "Status"],
+      rows: [
+        {
+          id: "activity-001",
+          cells: ["24 Mar 2026, 09:05", "Logistics", "Arua", "Delivered PPE to holding site", "J. Auma", "Closed"]
+        },
+        {
+          id: "activity-002",
+          cells: ["24 Mar 2026, 08:31", "Surveillance", "Gulu", "Briefed district surveillance team", "RRT North", "Open"]
+        },
+        {
+          id: "activity-003",
+          cells: ["23 Mar 2026, 19:42", "Case Management", "Kampala", "Transferred isolation supplies", "M. Kasozi", "Closed"]
+        }
+      ]
+    },
+    actions: [
+      "Create logs quickly during field work without opening unrelated deployment data.",
+      "Review recent operational events during handover and coordination calls.",
+      "Update or remove entries when the activity record was posted in error."
+    ],
+    checks: [
+      "Confirm every log has time, location, owner, and short action detail.",
+      "Keep descriptions concise enough for fast scanning in a table.",
+      "Review open logs that should already be resolved."
+    ]
+  }),
+  "deployment-requisitions": createLeafPage({
+    id: "deployment-requisitions",
+    title: "Requisitions",
+    source: "/api/resource-management/requisitions",
+    cadence: "As requests are raised and processed",
+    owner: "Logistics and Supply Desk",
+    intro:
+      "The requisitions file tracks requests for supplies, equipment, or support so logistics teams can move from demand to fulfillment cleanly.",
+    dataTable: {
+      title: "Open Requisitions",
+      caption: "Representative requisition records for the deployment folder",
+      columns: ["Req ID", "Requestor", "District", "Item group", "Priority", "Status", "Updated"],
+      rows: [
+        {
+          id: "req-001",
+          cells: ["REQ-24031", "Arua RRT", "Arua", "IPC supplies", "High", "Awaiting Approval", "24 Mar 2026, 08:54"]
+        },
+        {
+          id: "req-002",
+          cells: ["REQ-24032", "Gulu Surveillance", "Gulu", "Fuel support", "Medium", "In Fulfillment", "24 Mar 2026, 08:09"]
+        },
+        {
+          id: "req-003",
+          cells: ["REQ-24028", "Kasese Case Team", "Kasese", "Clinical kits", "High", "Partially Fulfilled", "23 Mar 2026, 18:22"]
+        }
+      ]
+    },
+    actions: [
+      "Review requisitions by urgency and fulfillment stage.",
+      "Track which requests are blocked on approval, stock, or transport.",
+      "Use the focused file to process requests without mixing them with inventory records."
+    ],
+    checks: [
+      "Confirm requestors, locations, and priorities are complete.",
+      "Validate each requisition references real items or service categories.",
+      "Review aging requests before they become field blockers."
+    ]
+  }),
+  "deployment-resources": createLeafPage({
+    id: "deployment-resources",
+    title: "Resources",
+    source: "/api/resource-management/resources",
+    cadence: "Live stock and asset updates",
+    owner: "Logistics Asset Control",
+    intro:
+      "The resources file holds the inventory side of deployment work, making it easier to maintain stock, equipment, and operational assets in one table.",
+    dataTable: {
+      title: "Tracked Resources",
+      caption: "Representative stock and equipment records for resource management",
+      columns: ["Resource", "Category", "Location", "Available", "Assigned", "Status"],
+      rows: [
+        { id: "resource-001", cells: ["PPE Kit", "IPC", "Kampala Store", "120", "30", "Available"] },
+        { id: "resource-002", cells: ["Satellite Phone", "Communication", "Arua Hub", "6", "4", "Limited"] },
+        { id: "resource-003", cells: ["Field Tent", "Shelter", "Gulu Hub", "12", "9", "Available"] }
+      ]
+    },
+    actions: [
+      "Register, review, and adjust operational resources in one focused file.",
+      "Check which assets are available before approving requisitions or deployments.",
+      "Use clear stock tables to support quick decisions during response coordination."
+    ],
+    checks: [
+      "Confirm quantities and locations reflect the latest stock movement.",
+      "Validate that assigned items still point to active teams or deployments.",
+      "Review low-availability items before they affect response readiness."
+    ]
+  }),
+  "deployment-rrt-deployments": createLeafPage({
+    id: "deployment-rrt-deployments",
+    title: "RRT Deployments",
+    source: "/api/resource-management/rrt-deployments",
+    cadence: "Live dispatch tracking",
+    owner: "Rapid Response Coordination",
+    intro:
+      "RRT deployments track where rapid response teams are sent, who is leading, and whether each deployment is still active, completed, or delayed.",
+    dataTable: {
+      title: "Active RRT Deployments",
+      caption: "Representative rapid response deployment records",
+      columns: ["Deployment", "Team", "Destination", "Lead", "Window", "Status"],
+      rows: [
+        {
+          id: "rrt-deploy-001",
+          cells: ["RRT-DEP-011", "North Team A", "Arua", "Dr. Onen", "24-27 Mar 2026", "Active"]
+        },
+        {
+          id: "rrt-deploy-002",
+          cells: ["RRT-DEP-012", "Central Team B", "Kampala", "S. Nakanwagi", "24-25 Mar 2026", "Mobilizing"]
+        },
+        {
+          id: "rrt-deploy-003",
+          cells: ["RRT-DEP-009", "West Team C", "Kasese", "P. Kisembo", "22-24 Mar 2026", "Closing"]
+        }
+      ]
+    },
+    actions: [
+      "Create and update dispatch records without navigating through unrelated logistics files.",
+      "Review who is deployed, where they are going, and the current field status.",
+      "Close completed deployments promptly so team availability stays accurate."
+    ],
+    checks: [
+      "Confirm each deployment references a real RRT team.",
+      "Validate dates, destination, and lead before dispatch.",
+      "Review stale active deployments that should already be closed."
+    ]
+  }),
+  "deployment-rrt-teams": createLeafPage({
+    id: "deployment-rrt-teams",
+    title: "RRT Teams",
+    source: "/api/resource-management/rrt-teams",
+    cadence: "As team composition changes",
+    owner: "Rapid Response Coordination",
+    intro:
+      "The RRT teams file maintains the team roster used by deployments, making it easier to keep dispatch records tied to valid and current response teams.",
+    dataTable: {
+      title: "RRT Team Register",
+      caption: "Representative rapid response team records",
+      columns: ["Team", "Region", "Lead", "Members", "Availability", "Updated"],
+      rows: [
+        { id: "rrt-team-001", cells: ["North Team A", "Northern", "Dr. Onen", "8", "Available", "24 Mar 2026, 07:56"] },
+        { id: "rrt-team-002", cells: ["Central Team B", "Central", "S. Nakanwagi", "6", "Deployed", "24 Mar 2026, 08:14"] },
+        { id: "rrt-team-003", cells: ["West Team C", "Western", "P. Kisembo", "7", "Recovery", "23 Mar 2026, 16:48"] }
+      ]
+    },
+    actions: [
+      "Review team composition and readiness before assigning new deployments.",
+      "Create or update team records as staff availability changes.",
+      "Keep team names stable so deployment links remain reliable."
+    ],
+    checks: [
+      "Confirm lead, region, and current availability are complete.",
+      "Avoid duplicate team names that can break deployment mapping.",
+      "Review whether inactive teams are still attached to open deployments."
     ]
   }),
   quarantine: createLeafPage({
