@@ -187,3 +187,45 @@ export interface ResourceWritePayload {
   shelf_life_days: number;
   unit_of_measure: string;
 }
+
+export interface ActivityLogRecord {
+  id: number;
+  deployment_id: number;
+  activity_date: string;
+  activity_description: string;
+  activity_type: string;
+  challenges: string;
+  end_time: string;
+  location: string;
+  outcomes: string;
+  participants_count: number;
+  recommendations: string;
+  resources_used: string;
+  start_time: string;
+  created_at: string;
+  updated_at: string;
+  created_by: NullableInt64Value;
+  updated_by: NullableInt64Value;
+}
+
+export type ActivityLogsResponse = { activity_logs: ActivityLogRecord[] };
+
+export interface ActivityLogMutationResponse {
+  id?: number;
+  message?: string;
+}
+
+export interface ActivityLogWritePayload {
+  activity_date: string;
+  activity_description: string;
+  activity_type: string;
+  challenges: string;
+  deployment_id: number;
+  end_time: string;
+  location: string;
+  outcomes: string;
+  participants_count: number;
+  recommendations: string;
+  resources_used: string;
+  start_time: string;
+}
