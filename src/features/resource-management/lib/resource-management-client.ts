@@ -54,13 +54,8 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export async function fetchRequisitions(): Promise<RequisitionsResponse> {
-  const payload = await requestJson<unknown>("/api/resource-management/requisitions");
-
-  if (Array.isArray(payload)) {
-    return payload as RequisitionsResponse;
-  }
-
-  return [];
+  const payload = await requestJson<RequisitionsResponse>("/api/resource-management/requisitions");
+  return payload;
 }
 
 export async function createRequisition(
@@ -70,6 +65,25 @@ export async function createRequisition(
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data)
+  });
+}
+
+export async function updateRequisition(
+  id: number,
+  data: CreateRequisitionPayload
+): Promise<RequisitionMutationResponse> {
+  return requestJson<RequisitionMutationResponse>(`/api/resource-management/requisitions/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data)
+  });
+}
+
+export async function deleteRequisition(
+  id: number
+): Promise<RequisitionMutationResponse> {
+  return requestJson<RequisitionMutationResponse>(`/api/resource-management/requisitions/${id}`, {
+    method: "DELETE"
   });
 }
 function createJsonRequest(path: string, method: string, payload?: object) {

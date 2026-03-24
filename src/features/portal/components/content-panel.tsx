@@ -73,16 +73,16 @@ export function ContentPanel({
           ) : null}
 
           {!isHome &&
-          !isUserManagement &&
-          !isCifVhf &&
-          !isCifMpox &&
-          !isDeploymentPillars &&
-          !isEmployeesPage &&
-          !isRrtTeamsPage &&
-          !isOutbreakWorkspace &&
-          !isDeploymentRequisitions &&
-          !isSettings &&
-          content.summaryCards?.length ? (
+            !isUserManagement &&
+            !isCifVhf &&
+            !isCifMpox &&
+            !isDeploymentPillars &&
+            !isEmployeesPage &&
+            !isRrtTeamsPage &&
+            !isOutbreakWorkspace &&
+            !isDeploymentRequisitions &&
+            !isSettings &&
+            content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -100,16 +100,16 @@ export function ContentPanel({
           ) : null}
 
           {!isHome &&
-          !isUserManagement &&
-          !isCifVhf &&
-          !isCifMpox &&
-          !isDeploymentPillars &&
-          !isEmployeesPage &&
-          !isRrtTeamsPage &&
-          !isOutbreakWorkspace &&
-          !isDeploymentRequisitions &&
-          !isSettings &&
-          content.dataTable ? (
+            !isUserManagement &&
+            !isCifVhf &&
+            !isCifMpox &&
+            !isDeploymentPillars &&
+            !isEmployeesPage &&
+            !isRrtTeamsPage &&
+            !isOutbreakWorkspace &&
+            !isDeploymentRequisitions &&
+            !isSettings &&
+            content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>
                 {content.dataTable.title}
@@ -167,23 +167,25 @@ export function ContentPanel({
             />
           ) : null}
           {isSettings ? <SettingsWorkspace /> : null}
+          {isDeploymentRequisitions ? <DeploymentRequisitionsWorkspace /> : null}
 
           {!isHome &&
-          !isUserManagement &&
-          !isOutbreakWorkspace &&
-          !isSettings &&
-          !isEmployeesPage &&
-          !isRrtTeamsPage
+            !isUserManagement &&
+            !isOutbreakWorkspace &&
+            !isSettings &&
+            !isEmployeesPage &&
+            !isRrtTeamsPage &&
+            !isDeploymentRequisitions
             ? content.sections.map((section) => (
-                <section className={styles.plainSection} key={section.title}>
-                  <h2 className={styles.plainSectionTitle}>{section.title}</h2>
-                  <ul className={styles.plainSectionList}>
-                    {section.items.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </section>
-              ))
+              <section className={styles.plainSection} key={section.title}>
+                <h2 className={styles.plainSectionTitle}>{section.title}</h2>
+                <ul className={styles.plainSectionList}>
+                  {section.items.map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
+              </section>
+            ))
             : null}
         </>
       ) : null}
