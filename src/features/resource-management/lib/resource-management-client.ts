@@ -1,6 +1,9 @@
 "use client";
 
 import type {
+  ActivityLogMutationResponse,
+  ActivityLogsResponse,
+  ActivityLogWritePayload,
   CreateRequisitionPayload,
   RequisitionMutationResponse,
   RequisitionsResponse,
@@ -199,6 +202,42 @@ export function updateResource(resourceId: number, payload: ResourceWritePayload
 export function deleteResource(resourceId: number) {
   return createTypedJsonRequest<ResourceMutationResponse>(
     `/api/resource-management/resources/${resourceId}`,
+    "DELETE"
+  );
+}
+
+export function fetchActivityLogs(): Promise<ActivityLogsResponse> {
+  return requestJson<ActivityLogsResponse>("/api/resource-management/activity-logs");
+}
+
+export function fetchActivityLog(id: number): Promise<{ activity_log: ActivityLogMutationResponse }> {
+  return requestJson(`/api/resource-management/activity-logs/${id}`);
+}
+
+export function createActivityLog(
+  payload: ActivityLogWritePayload
+): Promise<ActivityLogMutationResponse> {
+  return createTypedJsonRequest<ActivityLogMutationResponse>(
+    "/api/resource-management/activity-logs",
+    "POST",
+    payload
+  );
+}
+
+export function updateActivityLog(
+  id: number,
+  payload: ActivityLogWritePayload
+): Promise<ActivityLogMutationResponse> {
+  return createTypedJsonRequest<ActivityLogMutationResponse>(
+    `/api/resource-management/activity-logs/${id}`,
+    "PUT",
+    payload
+  );
+}
+
+export function deleteActivityLog(id: number): Promise<ActivityLogMutationResponse> {
+  return createTypedJsonRequest<ActivityLogMutationResponse>(
+    `/api/resource-management/activity-logs/${id}`,
     "DELETE"
   );
 }

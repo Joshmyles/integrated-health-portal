@@ -1,0 +1,20 @@
+/*
+ * Extends resources-workspace styles.
+ * Key override: tableWrap must not create a scroll container so that
+ * absolutely-positioned dropdowns can escape its bounds.
+ * (overflow-x: auto implicitly forces overflow-y to auto per CSS spec,
+ * which clips the dropdown. We split scroll into a dedicated inner wrapper.)
+ */
+
+.tableOuter {
+  background: #ffffff;
+  /* horizontal scroll lives here only */
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.tableWrap {
+  /* no overflow clipping — allows dropdown to escape */
+  overflow: visible;
+  background: #ffffff;
+}
