@@ -126,8 +126,6 @@ const portalTree: PortalTreeNode[] = [
         label: "Deployment",
         kind: "group",
         children: [
-          { id: "deployment-home", label: "Home", kind: "item" },
-          { id: "deployment-summary", label: "Summary", kind: "item" },
           { id: "deployment-pillars", label: "Pillars", kind: "item" },
           { id: "deployment-activity-logs", label: "Activity Logs", kind: "item" },
           { id: "deployment-requisitions", label: "Requisitions", kind: "item" },
