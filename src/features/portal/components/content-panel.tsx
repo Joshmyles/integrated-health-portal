@@ -2,6 +2,7 @@ import type { PortalPageContent } from "@/src/features/portal/types/portal";
 import { OutbreakWorkspace } from "@/src/features/outbreak/components/outbreak-workspace";
 import { CifMpoxWorkspace } from "@/src/features/cif/components/cif-mpox-workspace";
 import { CifVhfWorkspace } from "@/src/features/cif/components/cif-vhf-workspace";
+import { PillarsWorkspace } from "@/src/features/resource-management/components/pillars-workspace";
 import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
 import styles from "./portal-shell.module.css";
 
@@ -21,6 +22,7 @@ export function ContentPanel({
   const isOutbreakWorkspace = content?.id === "cif-outbreak";
   const isCifVhf = content?.id === "cif-vhf";
   const isCifMpox = content?.id === "cif-mpox";
+  const isDeploymentPillars = content?.id === "deployment-pillars";
 
   return (
     <section className={styles.contentPanel}>
@@ -59,6 +61,7 @@ export function ContentPanel({
           !isUserManagement &&
           !isCifVhf &&
           !isCifMpox &&
+          !isDeploymentPillars &&
           !isOutbreakWorkspace &&
           content.summaryCards?.length ? (
             <section className={styles.dataSection}>
@@ -79,6 +82,7 @@ export function ContentPanel({
           !isUserManagement &&
           !isCifVhf &&
           !isCifMpox &&
+          !isDeploymentPillars &&
           !isOutbreakWorkspace &&
           content.dataTable ? (
             <section className={styles.dataSection}>
@@ -114,6 +118,7 @@ export function ContentPanel({
           {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
           {isCifVhf ? <CifVhfWorkspace /> : null}
           {isCifMpox ? <CifMpoxWorkspace /> : null}
+          {isDeploymentPillars ? <PillarsWorkspace /> : null}
 
           {!isHome && !isUserManagement && !isOutbreakWorkspace
             ? content.sections.map((section) => (
