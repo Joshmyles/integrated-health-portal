@@ -8,6 +8,7 @@ import { CifMpoxWorkspace } from '@/src/features/cif/components/cif-mpox-workspa
 import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
 import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
+import { ResourcesWorkspace } from '@/src/features/resource-management/components/resources-workspace';
 import { RrtTeamsManagementWorkspace } from '@/src/features/portal/components/rrt-teams-management-workspace';
 
 
@@ -30,6 +31,7 @@ export function ContentPanel({
   const isSettings = content?.id === 'system-settings';
   const isCifMpox = content?.id === 'cif-mpox';
   const isDeploymentPillars = content?.id === 'deployment-pillars';
+  const isDeploymentResources = content?.id === 'deployment-resources';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
   const isRrtTeamsPage = content?.id === 'deployment-rrt-teams';
@@ -73,16 +75,16 @@ export function ContentPanel({
           ) : null}
 
           {!isHome &&
-            !isUserManagement &&
-            !isCifVhf &&
-            !isCifMpox &&
-            !isDeploymentPillars &&
-            !isEmployeesPage &&
-            !isRrtTeamsPage &&
-            !isOutbreakWorkspace &&
-            !isDeploymentRequisitions &&
-            !isSettings &&
-            content.summaryCards?.length ? (
+          !isUserManagement &&
+          !isCifVhf &&
+          !isCifMpox &&
+          !isDeploymentPillars &&
+          !isDeploymentResources &&
+          !isEmployeesPage &&
+          !isRrtTeamsPage &&
+          !isOutbreakWorkspace &&
+          !isSettings &&
+          content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -100,16 +102,16 @@ export function ContentPanel({
           ) : null}
 
           {!isHome &&
-            !isUserManagement &&
-            !isCifVhf &&
-            !isCifMpox &&
-            !isDeploymentPillars &&
-            !isEmployeesPage &&
-            !isRrtTeamsPage &&
-            !isOutbreakWorkspace &&
-            !isDeploymentRequisitions &&
-            !isSettings &&
-            content.dataTable ? (
+          !isUserManagement &&
+          !isCifVhf &&
+          !isCifMpox &&
+          !isDeploymentPillars &&
+          !isDeploymentResources &&
+          !isEmployeesPage &&
+          !isRrtTeamsPage &&
+          !isOutbreakWorkspace &&
+          !isSettings &&
+          content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>
                 {content.dataTable.title}
@@ -154,6 +156,7 @@ export function ContentPanel({
           {isCifVhf ? <CifVhfWorkspace /> : null}
           {isCifMpox ? <CifMpoxWorkspace /> : null}
           {isDeploymentPillars ? <PillarsWorkspace /> : null}
+          {isDeploymentResources ? <ResourcesWorkspace /> : null}
           {isEmployeesPage && content.employeeDirectory?.length ? (
             <EmployeeManagementWorkspace
               employees={content.employeeDirectory}

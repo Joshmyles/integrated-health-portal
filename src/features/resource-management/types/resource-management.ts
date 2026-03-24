@@ -110,3 +110,59 @@ export interface PillarWritePayload {
   pillar_head_name: string;
   pillar_head_phone: string;
 }
+
+export interface ResourceCategoryRecord {
+  category_type: string;
+  created_at: string;
+  created_by: NullableInt64Value;
+  description: NullableStringValue;
+  id: number;
+  is_active: boolean;
+  name: string;
+  updated_at: string;
+}
+
+export interface ResourceRecord {
+  category?: ResourceCategoryRecord;
+  category_id: number;
+  created_at: string;
+  created_by: NullableInt64Value;
+  description: NullableStringValue;
+  has_expiry: boolean;
+  id: number;
+  is_active: boolean;
+  is_consumable: boolean;
+  is_critical: boolean;
+  name: string;
+  resource_code: NullableStringValue;
+  shelf_life_days: NullableInt64Value;
+  unit_of_measure: string;
+  updated_at: string;
+}
+
+export interface ResourcesResponse {
+  resources: ResourceRecord[];
+}
+
+export interface ResourceDetailResponse {
+  resource: ResourceRecord;
+}
+
+export interface ResourceMutationResponse {
+  id?: number;
+  message?: string;
+  resource?: ResourceRecord | null;
+}
+
+export interface ResourceWritePayload {
+  category_id: number;
+  description: string;
+  has_expiry: boolean;
+  is_active: boolean;
+  is_consumable: boolean;
+  is_critical: boolean;
+  name: string;
+  resource_code: string;
+  shelf_life_days: number;
+  unit_of_measure: string;
+}
