@@ -1,4 +1,6 @@
 import type { PortalPageContent } from "@/src/features/portal/types/portal";
+import { OutbreakWorkspace } from "@/src/features/outbreak/components/outbreak-workspace";
+import { CifMpoxWorkspace } from "@/src/features/cif/components/cif-mpox-workspace";
 import { CifVhfWorkspace } from "@/src/features/cif/components/cif-vhf-workspace";
 import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
 import styles from "./portal-shell.module.css";
@@ -16,7 +18,9 @@ export function ContentPanel({
 }: ContentPanelProps) {
   const isHome = content?.id === "home";
   const isUserManagement = content?.id === "user-management-home";
+  const isOutbreakWorkspace = content?.id === "cif-outbreak";
   const isCifVhf = content?.id === "cif-vhf";
+  const isCifMpox = content?.id === "cif-mpox";
 
   return (
     <section className={styles.contentPanel}>
@@ -51,7 +55,12 @@ export function ContentPanel({
             </dl>
           ) : null}
 
-          {!isHome && !isUserManagement && !isCifVhf && content.summaryCards?.length ? (
+          {!isHome &&
+          !isUserManagement &&
+          !isCifVhf &&
+          !isCifMpox &&
+          !isOutbreakWorkspace &&
+          content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -66,7 +75,12 @@ export function ContentPanel({
             </section>
           ) : null}
 
-          {!isHome && !isUserManagement && !isCifVhf && content.dataTable ? (
+          {!isHome &&
+          !isUserManagement &&
+          !isCifVhf &&
+          !isCifMpox &&
+          !isOutbreakWorkspace &&
+          content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
               {content.dataTable.caption ? (
@@ -97,9 +111,11 @@ export function ContentPanel({
           ) : null}
 
           {isUserManagement ? <UserManagementWorkspace /> : null}
+          {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
           {isCifVhf ? <CifVhfWorkspace /> : null}
+          {isCifMpox ? <CifMpoxWorkspace /> : null}
 
-          {!isHome && !isUserManagement && !isCifVhf
+          {!isHome && !isUserManagement && !isOutbreakWorkspace
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>

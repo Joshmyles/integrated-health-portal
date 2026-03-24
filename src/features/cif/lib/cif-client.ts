@@ -1,9 +1,10 @@
 import type {
+  MpoxPatientsResponse,
   VhfClinicalSignsResponse,
   VhfHospitalizationResponse,
   VhfInvestigatorResponse,
-  VhfMutationResponse,
   VhfLaboratoryResponse,
+  VhfMutationResponse,
   VhfPatientDetailResponse,
   VhfPatientsResponse,
   VhfPatientWritePayload,
@@ -77,7 +78,10 @@ export function createVhfPatient(payload: VhfPatientWritePayload) {
   return createJsonRequest("/api/vhf/patients", "POST", payload);
 }
 
-export function updateVhfPatient(patientId: number, payload: VhfPatientWritePayload) {
+export function updateVhfPatient(
+  patientId: number,
+  payload: VhfPatientWritePayload
+) {
   return createJsonRequest(`/api/vhf/patients/${patientId}`, "PUT", payload);
 }
 
@@ -86,23 +90,33 @@ export function deleteVhfPatient(patientId: number) {
 }
 
 export function fetchVhfClinicalSigns(patientId: number) {
-  return requestJson<VhfClinicalSignsResponse>(`/api/vhf/patients/${patientId}/clinical-signs`);
+  return requestJson<VhfClinicalSignsResponse>(
+    `/api/vhf/patients/${patientId}/clinical-signs`
+  );
 }
 
 export function fetchVhfHospitalization(patientId: number) {
-  return requestJson<VhfHospitalizationResponse>(`/api/vhf/patients/${patientId}/hospitalization`);
+  return requestJson<VhfHospitalizationResponse>(
+    `/api/vhf/patients/${patientId}/hospitalization`
+  );
 }
 
 export function fetchVhfInvestigator(patientId: number) {
-  return requestJson<VhfInvestigatorResponse>(`/api/vhf/patients/${patientId}/investigator`);
+  return requestJson<VhfInvestigatorResponse>(
+    `/api/vhf/patients/${patientId}/investigator`
+  );
 }
 
 export function fetchVhfLaboratory(patientId: number) {
-  return requestJson<VhfLaboratoryResponse>(`/api/vhf/patients/${patientId}/laboratory`);
+  return requestJson<VhfLaboratoryResponse>(
+    `/api/vhf/patients/${patientId}/laboratory`
+  );
 }
 
 export function fetchVhfRiskFactors(patientId: number) {
-  return requestJson<VhfRiskFactorsResponse>(`/api/vhf/patients/${patientId}/risk-factors`);
+  return requestJson<VhfRiskFactorsResponse>(
+    `/api/vhf/patients/${patientId}/risk-factors`
+  );
 }
 
 export function saveVhfSection(
@@ -111,4 +125,8 @@ export function saveVhfSection(
   payload: VhfSectionWritePayload
 ) {
   return createJsonRequest(`/api/vhf/patients/${patientId}/${section}`, "POST", payload);
+}
+
+export function fetchMpoxPatients() {
+  return requestJson<MpoxPatientsResponse>("/api/mpox/patients");
 }

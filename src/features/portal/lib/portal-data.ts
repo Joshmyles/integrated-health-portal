@@ -3,6 +3,11 @@ import type {
   PortalPageContent,
   PortalTreeNode
 } from "@/src/features/portal/types/portal";
+import {
+  fetchAllSubcounties,
+  fetchDistricts,
+  fetchVillages
+} from "@/src/features/portal/lib/districts";
 
 const portalTree: PortalTreeNode[] = [
   {
@@ -125,6 +130,8 @@ const portalTree: PortalTreeNode[] = [
     children: [
       { id: "facilities-registry", label: "Facilities Registry", kind: "item" },
       { id: "district-profiles", label: "District Profiles", kind: "item" },
+      { id: "subcounty-profiles", label: "Subcounty Profiles", kind: "item" },
+      { id: "village-profiles", label: "Village Profiles", kind: "item" },
       { id: "partner-directory", label: "Partner Directory", kind: "item" }
     ]
   }
@@ -1456,6 +1463,42 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Review downstream impact before publishing changes."
     ]
   }),
+  "subcounty-profiles": createLeafPage({
+    id: "subcounty-profiles",
+    title: "Subcounty Profiles",
+    source: "Master subcounty reference data",
+    cadence: "As administrative updates occur",
+    owner: "Administrative Data Management",
+    intro: "Keep subcounty records aligned with their district so downstream reporting and field operations stay consistent.",
+    actions: [
+      "Review subcounty names and code changes.",
+      "Track new administrative units within the selected district.",
+      "Coordinate updates before dependent modules refresh."
+    ],
+    checks: [
+      "Confirm subcounty names remain canonical.",
+      "Validate district linkage before publishing changes.",
+      "Review downstream impact before sharing updates."
+    ]
+  }),
+  "village-profiles": createLeafPage({
+    id: "village-profiles",
+    title: "Village Profiles",
+    source: "Master village reference data",
+    cadence: "As administrative updates occur",
+    owner: "Administrative Data Management",
+    intro: "Keep village records aligned with district, subcounty, and parish identifiers so reporting and field follow-up stay consistent.",
+    actions: [
+      "Review village names and code changes.",
+      "Track updates to village, parish, and subcounty mappings.",
+      "Coordinate changes before dependent modules refresh."
+    ],
+    checks: [
+      "Confirm village names remain canonical.",
+      "Validate district, subcounty, and parish linkage fields.",
+      "Review downstream impact before sharing updates."
+    ]
+  }),
   "partner-directory": createLeafPage({
     id: "partner-directory",
     title: "Partner Directory",
@@ -1484,6 +1527,278 @@ export function getPortalNavigation(): PortalNavigationResponse {
   };
 }
 
-export function getPortalContent(nodeId: string) {
+async function getDistrictProfilesPage(): Promise<PortalPageContent> {
+  try {
+    const districts = await fetchDistricts();
+    const districtsWithCodes = districts.filter((district) => district.code !== "Not set");
+
+    return createLeafPage({
+      id: "district-profiles",
+      title: "District Profiles",
+      source: "response.health.go.ug/api/locations/districts",
+      cadence: "Live on request",
+      owner: "Administrative Data Management",
+      intro: "Live district reference data from the Ministry endpoint, normalized for cleaner downstream review.",
+      actions: [
+        "Review district names and codes coming from the upstream service.",
+        "Track administrative records that need cleanup before downstream use.",
+        "Coordinate reference data changes with dependent modules."
+      ],
+      checks: [
+        "Confirm district names remain canonical after normalization.",
+        "Review districts still missing codes.",
+        "Validate upstream updates before sharing exports with other teams."
+      ],
+      summaryCards: [
+        {
+          label: "Districts Available",
+          value: `${districts.length}`,
+          note: "Unique district names after normalization and duplicate cleanup"
+        },
+        {
+          label: "Codes Present",
+          value: `${districtsWithCodes.length}`,
+          note: "Districts with a usable upstream code"
+        },
+        {
+          label: "Codes Missing",
+          value: `${districts.length - districtsWithCodes.length}`,
+          note: "Districts that still need a canonical code assigned"
+        }
+      ],
+      dataTable: {
+        title: "District Directory",
+        caption: "Latest district records returned by the upstream locations service.",
+        columns: ["District", "Code", "Updated", "Created"],
+        rows: districts.map((district) => ({
+          id: `${district.id}`,
+          cells: [district.name, district.code, district.updatedAt, district.createdAt]
+        }))
+      }
+    });
+  } catch {
+    return {
+      ...createLeafPage({
+        id: "district-profiles",
+        title: "District Profiles",
+        source: "response.health.go.ug/api/locations/districts",
+        cadence: "Live on request",
+        owner: "Administrative Data Management",
+        intro: "Live district reference data from the Ministry endpoint, normalized for cleaner downstream review.",
+        actions: [
+          "Retry the upstream request when the locations service becomes available.",
+          "Use the most recent verified export if an urgent lookup is needed.",
+          "Coordinate with the data team before publishing manual corrections."
+        ],
+        checks: [
+          "Confirm the endpoint is reachable.",
+          "Review whether authentication or network policy changed.",
+          "Validate any fallback district list before distribution."
+        ]
+      }),
+      message: "District data is temporarily unavailable from the upstream locations service."
+    };
+  }
+}
+
+async function getSubcountyProfilesPage(): Promise<PortalPageContent> {
+  try {
+    const subcounties = await fetchAllSubcounties();
+    const subcountiesWithCodes = subcounties.filter((subcounty) => subcounty.code !== "Not set");
+    const coveredDistricts = new Set(subcounties.map((subcounty) => subcounty.districtId)).size;
+
+    return createLeafPage({
+      id: "subcounty-profiles",
+      title: "Subcounty Profiles",
+      source: "response.health.go.ug/api/locations/subcounties/{districtId}",
+      cadence: "Live on request",
+      owner: "Administrative Data Management",
+      intro: "Live subcounty reference data aggregated across all districts from the Ministry locations service.",
+      actions: [
+        "Review subcounty names and codes coming from the upstream service.",
+        "Track administrative records that need cleanup before downstream use.",
+        "Coordinate changes with district and facility reference data."
+      ],
+      checks: [
+        "Confirm every subcounty remains linked to the expected district.",
+        "Review subcounties still missing codes.",
+        "Validate upstream changes before distributing local exports."
+      ],
+      summaryCards: [
+        {
+          label: "Subcounties Available",
+          value: `${subcounties.length}`,
+          note: "Rows aggregated from all district-level upstream endpoints"
+        },
+        {
+          label: "Districts Covered",
+          value: `${coveredDistricts}`,
+          note: "Districts that currently return subcounty records"
+        },
+        {
+          label: "Codes Present",
+          value: `${subcountiesWithCodes.length}`,
+          note: "Subcounties with a usable upstream code"
+        },
+        {
+          label: "Codes Missing",
+          value: `${subcounties.length - subcountiesWithCodes.length}`,
+          note: "Subcounties that still need a canonical code assigned"
+        }
+      ],
+      dataTable: {
+        title: "National Subcounty Directory",
+        caption: "Latest subcounty records aggregated from the upstream locations service for all districts.",
+        columns: ["District", "District ID", "Subcounty", "Code", "Updated", "Created"],
+        rows: subcounties.map((subcounty) => ({
+          id: `${subcounty.id}`,
+          cells: [
+            subcounty.districtName ?? "Unknown District",
+            `${subcounty.districtId}`,
+            subcounty.name,
+            subcounty.code,
+            subcounty.updatedAt,
+            subcounty.createdAt
+          ]
+        }))
+      }
+    });
+  } catch {
+    return {
+      ...createLeafPage({
+        id: "subcounty-profiles",
+        title: "Subcounty Profiles",
+        source: "response.health.go.ug/api/locations/subcounties/{districtId}",
+        cadence: "Live on request",
+        owner: "Administrative Data Management",
+        intro: "Live subcounty reference data aggregated across all districts from the Ministry locations service.",
+        actions: [
+          "Retry the upstream request when the locations service becomes available.",
+          "Use the most recent verified export if an urgent lookup is needed.",
+          "Coordinate with the data team before publishing manual corrections."
+        ],
+        checks: [
+          "Confirm the endpoint is reachable.",
+          "Review whether authentication or network policy changed.",
+          "Validate any fallback subcounty list before distribution."
+        ]
+      }),
+      message: "Subcounty data is temporarily unavailable from the upstream locations service."
+    };
+  }
+}
+
+async function getVillageProfilesPage(): Promise<PortalPageContent> {
+  try {
+    const villages = await fetchVillages();
+    const villagesWithCodes = villages.filter((village) => village.code !== "Not set");
+    const coveredDistricts = new Set(villages.map((village) => village.districtId)).size;
+    const coveredParishes = new Set(villages.map((village) => village.parishId)).size;
+
+    return createLeafPage({
+      id: "village-profiles",
+      title: "Village Profiles",
+      source: "response.health.go.ug/api/locations/villages/",
+      cadence: "Live on request",
+      owner: "Administrative Data Management",
+      intro: "Live village reference data aggregated from the Ministry locations service.",
+      actions: [
+        "Review village names and codes coming from the upstream service.",
+        "Track administrative records that need cleanup before downstream use.",
+        "Coordinate village, parish, and subcounty reference changes together."
+      ],
+      checks: [
+        "Confirm every village remains linked to the expected district.",
+        "Review villages still missing codes.",
+        "Validate upstream changes before distributing local exports."
+      ],
+      summaryCards: [
+        {
+          label: "Villages Available",
+          value: `${villages.length}`,
+          note: "Rows returned by the national villages endpoint"
+        },
+        {
+          label: "Districts Covered",
+          value: `${coveredDistricts}`,
+          note: "Districts represented in the village dataset"
+        },
+        {
+          label: "Parishes Covered",
+          value: `${coveredParishes}`,
+          note: "Unique parishes represented in the village dataset"
+        },
+        {
+          label: "Codes Present",
+          value: `${villagesWithCodes.length}`,
+          note: "Villages with a usable upstream code"
+        }
+      ],
+      dataTable: {
+        title: "National Village Directory",
+        caption: "Latest village records returned by the upstream locations service.",
+        columns: [
+          "District",
+          "District ID",
+          "Subcounty ID",
+          "Parish ID",
+          "Village",
+          "Code",
+          "Updated",
+          "Created"
+        ],
+        rows: villages.map((village) => ({
+          id: `${village.id}`,
+          cells: [
+            village.districtName ?? "Unknown District",
+            `${village.districtId}`,
+            `${village.subcountyId}`,
+            `${village.parishId}`,
+            village.name,
+            village.code,
+            village.updatedAt,
+            village.createdAt
+          ]
+        }))
+      }
+    });
+  } catch {
+    return {
+      ...createLeafPage({
+        id: "village-profiles",
+        title: "Village Profiles",
+        source: "response.health.go.ug/api/locations/villages/",
+        cadence: "Live on request",
+        owner: "Administrative Data Management",
+        intro: "Live village reference data aggregated from the Ministry locations service.",
+        actions: [
+          "Retry the upstream request when the locations service becomes available.",
+          "Use the most recent verified export if an urgent lookup is needed.",
+          "Coordinate with the data team before publishing manual corrections."
+        ],
+        checks: [
+          "Confirm the endpoint is reachable.",
+          "Review whether authentication or network policy changed.",
+          "Validate any fallback village list before distribution."
+        ]
+      }),
+      message: "Village data is temporarily unavailable from the upstream locations service."
+    };
+  }
+}
+
+export async function getPortalContent(nodeId: string) {
+  if (nodeId === "district-profiles") {
+    return getDistrictProfilesPage();
+  }
+
+  if (nodeId === "subcounty-profiles") {
+    return getSubcountyProfilesPage();
+  }
+
+  if (nodeId === "village-profiles") {
+    return getVillageProfilesPage();
+  }
+
   return portalContentById[nodeId];
 }

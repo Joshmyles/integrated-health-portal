@@ -219,3 +219,12 @@ export type VhfSectionKey =
   | "investigator"
   | "laboratory"
   | "risk-factors";
+export interface MpoxPatient {
+  id: number;
+  patient_name: string;
+  status: string;
+}
+
+export interface MpoxPatientsResponse {
+  mpox_patients: MpoxPatient[];
+}
