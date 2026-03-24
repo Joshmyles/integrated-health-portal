@@ -85,3 +85,18 @@ export async function readPortalSession(): Promise<PortalSession | null> {
 
   return parsePortalSession(rawValue);
 }
+
+export async function readUpstreamResponseSession(): Promise<string | null> {
+  const cookieStore = await cookies();
+  const rawValue = cookieStore.get(UPSTREAM_RESPONSE_SESSION_COOKIE_NAME)?.value;
+
+  if (!rawValue) {
+    return null;
+  }
+
+  try {
+    return decodeURIComponent(rawValue);
+  } catch {
+    return rawValue;
+  }
+}

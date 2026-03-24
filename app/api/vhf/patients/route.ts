@@ -1,27 +1,67 @@
 import { NextResponse } from "next/server";
-import { readPortalSession } from "@/src/features/auth/lib/auth-session";
-import type { VhfPatientsResponse } from "@/src/features/cif/types/cif";
 import {
-  requestResponseHealth,
-  ResponseHealthApiError
-} from "@/src/features/users/lib/users-server";
+  forwardResponseHealth,
+  handleCifProxyError,
+  readJsonPayload,
+  requirePortalSession
+} from "@/src/features/cif/lib/cif-server";
+import type {
+  VhfMutationResponse,
+  VhfPatientsResponse,
+  VhfPatientWritePayload
+} from "@/src/features/cif/types/cif";
 
-export async function GET() {
-  if (!(await readPortalSession())) {
-    return NextResponse.json({ message: "Authentication required." }, { status: 401 });
+export async function GET(request: Request) {
+  const authResponse = await requirePortalSession();
+
+  if (authResponse) {
+    return authResponse;
+  }
+
+  const upstreamUrl = new URL("/api/vhf/patients", request.url);
+  const search = new URL(request.url).searchParams.toString();
+
+  if (search) {
+    upstreamUrl.search = search;
   }
 
   try {
-    const response = await requestResponseHealth<VhfPatientsResponse>("/api/vhf/patients");
+    const response = await forwardResponseHealth<VhfPatientsResponse>(
+      `${upstreamUrl.pathname}${upstreamUrl.search}`
+    );
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof ResponseHealthApiError) {
-      return NextResponse.json({ message: error.message }, { status: error.status });
-    }
+    return handleCifProxyError(error, "The VHF patient list could not be loaded right now.");
+  }
+}
 
-    return NextResponse.json(
-      { message: "The VHF patient list could not be loaded right now." },
-      { status: 502 }
-    );
+export async function POST(request: Request) {
+  const authResponse = await requirePortalSession();
+
+  if (authResponse) {
+    return authResponse;
+  }
+
+  const parsedPayload = await readJsonPayload<VhfPatientWritePayload>(
+    request,
+    "A valid JSON create payload is required."
+  );
+
+  if (!parsedPayload.ok) {
+    return parsedPayload.response;
+  }
+
+  try {
+    const response = await forwardResponseHealth<VhfMutationResponse>("/api/vhf/patients", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(parsedPayload.payload)
+    });
+
+    return NextResponse.json(response, { status: 201 });
+  } catch (error) {
+    return handleCifProxyError(error, "The VHF case could not be created right now.");
   }
 }

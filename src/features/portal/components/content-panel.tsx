@@ -1,9 +1,11 @@
-import type { PortalPageContent } from "@/src/features/portal/types/portal";
-import { OutbreakWorkspace } from "@/src/features/outbreak/components/outbreak-workspace";
-import { CifVhfWorkspace } from "@/src/features/cif/components/cif-vhf-workspace";
-import { SettingsWorkspace } from "@/src/features/settings/components/settings-workspace";
-import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
-import styles from "./portal-shell.module.css";
+import type { PortalPageContent } from '@/src/features/portal/types/portal';
+import { OutbreakWorkspace } from '@/src/features/outbreak/components/outbreak-workspace';
+import { CifMpoxWorkspace } from '@/src/features/cif/components/cif-mpox-workspace';
+import { CifVhfWorkspace } from '@/src/features/cif/components/cif-vhf-workspace';
+import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
+import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
+import { UserManagementWorkspace } from '@/src/features/users/components/user-management-workspace';
+import styles from './portal-shell.module.css';
 
 interface ContentPanelProps {
   content?: PortalPageContent;
@@ -14,17 +16,20 @@ interface ContentPanelProps {
 export function ContentPanel({
   content,
   isError,
-  isLoading
+  isLoading,
 }: ContentPanelProps) {
-  const isHome = content?.id === "home";
-  const isUserManagement = content?.id === "user-management-home";
-  const isOutbreakWorkspace = content?.id === "cif-outbreak";
-  const isCifVhf = content?.id === "cif-vhf";
-  const isSettings = content?.id === "system-settings";
+  const isHome = content?.id === 'home';
+  const isUserManagement = content?.id === 'user-management-home';
+  const isOutbreakWorkspace = content?.id === 'cif-outbreak';
+  const isCifVhf = content?.id === 'cif-vhf';
+  const isSettings = content?.id === 'system-settings';
+  const isCifMpox = content?.id === 'cif-mpox';
+  const isEmployeesPage =
+    content?.id === 'employees' || content?.id === 'human-resources';
 
   return (
     <section className={styles.contentPanel}>
-      <h1 className={styles.contentTitle}>{content?.title ?? "Home"}</h1>
+      <h1 className={styles.contentTitle}>{content?.title ?? 'Home'}</h1>
 
       {isLoading ? (
         <div className={styles.statusMessage}>Loading...</div>
@@ -33,16 +38,21 @@ export function ContentPanel({
       {!isLoading && isError ? (
         <div className={styles.statusMessage}>
           <div className={styles.errorMessage}>
-            The selected workspace could not be loaded. Please try another menu item.
+            The selected workspace could not be loaded. Please try another menu
+            item.
           </div>
         </div>
       ) : null}
 
       {!isLoading && !isError && content ? (
         <>
-          {content.message ? <p className={styles.legacyMessage}>{content.message}</p> : null}
+          {content.message ? (
+            <p className={styles.legacyMessage}>{content.message}</p>
+          ) : null}
 
-          {!isHome ? <p className={styles.contentIntro}>{content.intro}</p> : null}
+          {!isHome ? (
+            <p className={styles.contentIntro}>{content.intro}</p>
+          ) : null}
 
           {!isHome && content.records.length ? (
             <dl className={styles.metaList}>
@@ -58,6 +68,8 @@ export function ContentPanel({
           {!isHome &&
           !isUserManagement &&
           !isCifVhf &&
+          !isCifMpox &&
+          !isEmployeesPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
           content.summaryCards?.length ? (
@@ -68,7 +80,9 @@ export function ContentPanel({
                   <article className={styles.summaryCard} key={card.label}>
                     <div className={styles.summaryCardLabel}>{card.label}</div>
                     <div className={styles.summaryCardValue}>{card.value}</div>
-                    {card.note ? <p className={styles.summaryCardNote}>{card.note}</p> : null}
+                    {card.note ? (
+                      <p className={styles.summaryCardNote}>{card.note}</p>
+                    ) : null}
                   </article>
                 ))}
               </div>
@@ -78,13 +92,19 @@ export function ContentPanel({
           {!isHome &&
           !isUserManagement &&
           !isCifVhf &&
+          !isCifMpox &&
+          !isEmployeesPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
           content.dataTable ? (
             <section className={styles.dataSection}>
-              <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
+              <h2 className={styles.plainSectionTitle}>
+                {content.dataTable.title}
+              </h2>
               {content.dataTable.caption ? (
-                <p className={styles.dataTableCaption}>{content.dataTable.caption}</p>
+                <p className={styles.dataTableCaption}>
+                  {content.dataTable.caption}
+                </p>
               ) : null}
 
               <div className={styles.dataTableWrap}>
@@ -92,7 +112,9 @@ export function ContentPanel({
                   <thead>
                     <tr>
                       {content.dataTable.columns.map((column) => (
-                        <th key={column} scope="col">{column}</th>
+                        <th key={column} scope="col">
+                          {column}
+                        </th>
                       ))}
                     </tr>
                   </thead>
@@ -100,7 +122,11 @@ export function ContentPanel({
                     {content.dataTable.rows.map((row) => (
                       <tr key={row.id}>
                         {row.cells.map((cell, index) => (
-                          <td key={`${row.id}-${content.dataTable?.columns[index] ?? index}`}>{cell}</td>
+                          <td
+                            key={`${row.id}-${content.dataTable?.columns[index] ?? index}`}
+                          >
+                            {cell}
+                          </td>
                         ))}
                       </tr>
                     ))}
@@ -112,9 +138,21 @@ export function ContentPanel({
 
           {isUserManagement ? <UserManagementWorkspace /> : null}
           {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
+          {isCifVhf ? <CifVhfWorkspace /> : null}
+          {isCifMpox ? <CifMpoxWorkspace /> : null}
+          {isEmployeesPage && content.employeeDirectory?.length ? (
+            <EmployeeManagementWorkspace
+              employees={content.employeeDirectory}
+              title={content.dataTable?.title ?? 'Employee Directory'}
+            />
+          ) : null}
           {isSettings ? <SettingsWorkspace /> : null}
 
-          {!isHome && !isUserManagement && !isOutbreakWorkspace && !isSettings
+          {!isHome &&
+          !isUserManagement &&
+          !isOutbreakWorkspace &&
+          !isSettings &&
+          !isEmployeesPage
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>

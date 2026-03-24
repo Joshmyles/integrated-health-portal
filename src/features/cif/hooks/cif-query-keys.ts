@@ -1,3 +1,5 @@
 export const cifQueryKeys = {
-  vhfPatients: () => ["cif", "vhf", "patients"] as const
+  vhfPatient: (patientId: number) => ["cif", "vhf", "patient", patientId] as const,
+  vhfPatients: () => ["cif", "vhf", "patients"] as const,
+  mpoxPatients: () => ["cif", "mpox", "patients"] as const
 };
