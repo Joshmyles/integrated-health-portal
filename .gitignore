@@ -32,4 +32,8 @@ out/
 # Next.js build output.next/
 .next/
 # Next.js static files.out/    
-out/                                                                                                                                 
+out/      
+tsconfig.json
+tsconfig.build.json
+tsconfig.tsbiuldinfo.json
+# Ignore all .env files except .env.example                                                                                                                           
