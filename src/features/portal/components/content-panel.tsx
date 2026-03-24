@@ -6,6 +6,7 @@ import { SettingsWorkspace } from '@/src/features/settings/components/settings-w
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
 import { PillarsWorkspace } from '@/src/features/resource-management/components/pillars-workspace';
 import { ResourcesWorkspace } from '@/src/features/resource-management/components/resources-workspace';
+import { RrtDeploymentsManagementWorkspace } from '@/src/features/portal/components/rrt-deployments-management-workspace';
 import { RrtTeamsManagementWorkspace } from '@/src/features/portal/components/rrt-teams-management-workspace';
 import { UserManagementWorkspace } from '@/src/features/users/components/user-management-workspace';
 import styles from './portal-shell.module.css';
@@ -31,7 +32,10 @@ export function ContentPanel({
   const isDeploymentResources = content?.id === 'deployment-resources';
   const isEmployeesPage =
     content?.id === 'employees' || content?.id === 'human-resources';
+  const isRrtDeploymentsPage = content?.id === 'deployment-rrt-deployments';
   const isRrtTeamsPage = content?.id === 'deployment-rrt-teams';
+  const isCustomManagementPage =
+    isEmployeesPage || isRrtDeploymentsPage || isRrtTeamsPage || isDeploymentPillars;
 
   return (
     <section className={styles.contentPanel}>
@@ -56,11 +60,11 @@ export function ContentPanel({
             <p className={styles.legacyMessage}>{content.message}</p>
           ) : null}
 
-          {!isHome ? (
+          {!isHome && !isCustomManagementPage ? (
             <p className={styles.contentIntro}>{content.intro}</p>
           ) : null}
 
-          {!isHome && content.records.length ? (
+          {!isHome && !isCustomManagementPage && content.records.length ? (
             <dl className={styles.metaList}>
               {content.records.map((record) => (
                 <div className={styles.metaRow} key={record.label}>
@@ -78,6 +82,7 @@ export function ContentPanel({
           !isDeploymentPillars &&
           !isDeploymentResources &&
           !isEmployeesPage &&
+          !isRrtDeploymentsPage &&
           !isRrtTeamsPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
@@ -105,6 +110,7 @@ export function ContentPanel({
           !isDeploymentPillars &&
           !isDeploymentResources &&
           !isEmployeesPage &&
+          !isRrtDeploymentsPage &&
           !isRrtTeamsPage &&
           !isOutbreakWorkspace &&
           !isSettings &&
@@ -160,6 +166,12 @@ export function ContentPanel({
               title={content.dataTable?.title ?? 'Employee Directory'}
             />
           ) : null}
+          {isRrtDeploymentsPage && content.rrtDeployments?.length ? (
+            <RrtDeploymentsManagementWorkspace
+              deployments={content.rrtDeployments}
+              title={content.dataTable?.title ?? 'RRT Deployment Register'}
+            />
+          ) : null}
           {isRrtTeamsPage && content.rrtTeams?.length ? (
             <RrtTeamsManagementWorkspace
               teams={content.rrtTeams}
@@ -173,7 +185,9 @@ export function ContentPanel({
           !isOutbreakWorkspace &&
           !isSettings &&
           !isEmployeesPage &&
-          !isRrtTeamsPage
+          !isRrtDeploymentsPage &&
+          !isRrtTeamsPage &&
+          !isDeploymentPillars
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>
