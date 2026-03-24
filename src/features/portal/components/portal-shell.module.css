@@ -49,60 +49,108 @@
   margin-left: auto;
 }
 
-.sessionLabel {
-  color: var(--legacy-muted);
-  font-size: 11px;
+/* ── User menu ─────────────────────────────────────────────────────────── */
+.userMenu {
+  position: relative;
 }
 
-.logoutButton {
+.userMenuButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 28px;
+  gap: 6px;
+  min-height: 26px;
   border: 1px solid var(--legacy-border-dark);
   background: linear-gradient(180deg, #fcfcfc 0%, #e6e6e6 100%);
   cursor: pointer;
-  padding: 3px 10px 3px 8px;
+  padding: 2px 8px 2px 7px;
   box-shadow:
     inset 1px 1px 0 #ffffff,
     inset -1px -1px 0 #c9c9c9;
   color: #17384a;
   font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
 }
 
-.logoutButton:hover:not(:disabled) {
+.userMenuButton:hover:not(:disabled) {
   background: linear-gradient(180deg, #ffffff 0%, #ececec 100%);
   color: #102a37;
 }
 
-.logoutButton:disabled {
+.userMenuButton:disabled {
   cursor: wait;
   color: #666666;
 }
 
-.logoutIcon {
+.userMenuIcon,
+.userMenuChevron {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
   flex: 0 0 auto;
 }
 
-.logoutCopy {
+.userMenuName {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.userMenuDropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 50;
+  min-width: 160px;
+  border: 1px solid var(--legacy-border-dark);
+  background: #f3f3f3;
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #d7d7d7,
+    0 10px 20px rgba(0, 0, 0, 0.14);
+  padding: 4px;
+}
+
+.userMenuDropdownItem {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  line-height: 1.05;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  min-height: 28px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #222222;
+  cursor: pointer;
+  padding: 0 9px;
+  font-size: 11px;
+  text-align: left;
 }
 
-.logoutLabel {
-  font-weight: 700;
+.userMenuDropdownItem:hover:not(:disabled) {
+  border-color: var(--legacy-border-dark);
+  background: linear-gradient(180deg, #f9f9f9 0%, #e8e8e8 100%);
+  box-shadow:
+    inset 1px 1px 0 #ffffff,
+    inset -1px -1px 0 #c9c9c9;
 }
 
-.logoutMeta {
-  color: var(--legacy-muted);
-  font-size: 10px;
+.userMenuDropdownItem:disabled {
+  cursor: wait;
+  color: #888888;
+}
+
+.userMenuDropdownIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #555555;
+}
+
+.userMenuDivider {
+  height: 1px;
+  background: #d0d0d0;
+  margin: 3px 0;
 }
 
 .sessionErrorBanner {
@@ -461,7 +509,7 @@
 }
 
 @media (max-width: 560px) {
-  .sessionLabel {
-    display: none;
+  .userMenuName {
+    max-width: 80px;
   }
 }

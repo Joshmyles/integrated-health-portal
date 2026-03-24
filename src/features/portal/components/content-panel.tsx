@@ -1,6 +1,7 @@
 import type { PortalPageContent } from "@/src/features/portal/types/portal";
 import { OutbreakWorkspace } from "@/src/features/outbreak/components/outbreak-workspace";
 import { CifVhfWorkspace } from "@/src/features/cif/components/cif-vhf-workspace";
+import { SettingsWorkspace } from "@/src/features/settings/components/settings-workspace";
 import { UserManagementWorkspace } from "@/src/features/users/components/user-management-workspace";
 import styles from "./portal-shell.module.css";
 
@@ -19,6 +20,7 @@ export function ContentPanel({
   const isUserManagement = content?.id === "user-management-home";
   const isOutbreakWorkspace = content?.id === "cif-outbreak";
   const isCifVhf = content?.id === "cif-vhf";
+  const isSettings = content?.id === "system-settings";
 
   return (
     <section className={styles.contentPanel}>
@@ -57,6 +59,7 @@ export function ContentPanel({
           !isUserManagement &&
           !isCifVhf &&
           !isOutbreakWorkspace &&
+          !isSettings &&
           content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
@@ -76,6 +79,7 @@ export function ContentPanel({
           !isUserManagement &&
           !isCifVhf &&
           !isOutbreakWorkspace &&
+          !isSettings &&
           content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>{content.dataTable.title}</h2>
@@ -108,8 +112,9 @@ export function ContentPanel({
 
           {isUserManagement ? <UserManagementWorkspace /> : null}
           {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
+          {isSettings ? <SettingsWorkspace /> : null}
 
-          {!isHome && !isUserManagement && !isOutbreakWorkspace
+          {!isHome && !isUserManagement && !isOutbreakWorkspace && !isSettings
             ? content.sections.map((section) => (
                 <section className={styles.plainSection} key={section.title}>
                   <h2 className={styles.plainSectionTitle}>{section.title}</h2>
