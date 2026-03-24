@@ -11,7 +11,7 @@ export async function GET(
   }
 
   const { slug } = await context.params;
-  const page = getPortalContent(slug);
+  const page = await getPortalContent(slug);
 
   if (!page) {
     return NextResponse.json({ message: "Portal page not found." }, { status: 404 });
