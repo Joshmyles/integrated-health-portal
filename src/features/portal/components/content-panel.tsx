@@ -38,7 +38,7 @@ export function ContentPanel({
   const isRrtDeploymentsPage = content?.id === 'deployment-rrt-deployments';
   const isRrtTeamsPage = content?.id === 'deployment-rrt-teams';
   const isCustomManagementPage =
-    isEmployeesPage || isRrtDeploymentsPage || isRrtTeamsPage || isDeploymentPillars;
+    isEmployeesPage || isRrtDeploymentsPage || isRrtTeamsPage || isDeploymentPillars || isDeploymentRequisitions;
 
   return (
     <section className={styles.contentPanel}>
@@ -79,17 +79,18 @@ export function ContentPanel({
           ) : null}
 
           {!isHome &&
-          !isUserManagement &&
-          !isCifVhf &&
-          !isCifMpox &&
-          !isDeploymentPillars &&
-          !isDeploymentResources &&
-          !isEmployeesPage &&
-          !isRrtDeploymentsPage &&
-          !isRrtTeamsPage &&
-          !isOutbreakWorkspace &&
-          !isSettings &&
-          content.summaryCards?.length ? (
+            !isUserManagement &&
+            !isCifVhf &&
+            !isCifMpox &&
+            !isDeploymentPillars &&
+            !isDeploymentResources &&
+            !isEmployeesPage &&
+            !isRrtDeploymentsPage &&
+            !isRrtTeamsPage &&
+            !isOutbreakWorkspace &&
+            !isDeploymentRequisitions &&
+            !isSettings &&
+            content.summaryCards?.length ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>Operational Snapshot</h2>
               <div className={styles.summaryCardGrid}>
@@ -107,17 +108,18 @@ export function ContentPanel({
           ) : null}
 
           {!isHome &&
-          !isUserManagement &&
-          !isCifVhf &&
-          !isCifMpox &&
-          !isDeploymentPillars &&
-          !isDeploymentResources &&
-          !isEmployeesPage &&
-          !isRrtDeploymentsPage &&
-          !isRrtTeamsPage &&
-          !isOutbreakWorkspace &&
-          !isSettings &&
-          content.dataTable ? (
+            !isUserManagement &&
+            !isCifVhf &&
+            !isCifMpox &&
+            !isDeploymentPillars &&
+            !isDeploymentResources &&
+            !isEmployeesPage &&
+            !isRrtDeploymentsPage &&
+            !isRrtTeamsPage &&
+            !isOutbreakWorkspace &&
+            !isDeploymentRequisitions &&
+            !isSettings &&
+            content.dataTable ? (
             <section className={styles.dataSection}>
               <h2 className={styles.plainSectionTitle}>
                 {content.dataTable.title}
@@ -185,13 +187,14 @@ export function ContentPanel({
           {isDeploymentRequisitions ? <DeploymentRequisitionsWorkspace /> : null}
 
           {!isHome &&
-          !isUserManagement &&
-          !isOutbreakWorkspace &&
-          !isSettings &&
-          !isEmployeesPage &&
-          !isRrtDeploymentsPage &&
-          !isRrtTeamsPage &&
-          !isDeploymentPillars
+            !isUserManagement &&
+            !isOutbreakWorkspace &&
+            !isSettings &&
+            !isEmployeesPage &&
+            !isRrtDeploymentsPage &&
+            !isRrtTeamsPage &&
+            !isDeploymentPillars &&
+            !isDeploymentRequisitions
             ? content.sections.map((section) => (
               <section className={styles.plainSection} key={section.title}>
                 <h2 className={styles.plainSectionTitle}>{section.title}</h2>

@@ -1308,25 +1308,6 @@ const portalContentById: Record<string, PortalPageContent> = {
     owner: "Logistics and Supply Desk",
     intro:
       "The requisitions file tracks requests for supplies, equipment, or support so logistics teams can move from demand to fulfillment cleanly.",
-    dataTable: {
-      title: "Open Requisitions",
-      caption: "Representative requisition records for the deployment folder",
-      columns: ["Req ID", "Requestor", "District", "Item group", "Priority", "Status", "Updated"],
-      rows: [
-        {
-          id: "req-001",
-          cells: ["REQ-24031", "Arua RRT", "Arua", "IPC supplies", "High", "Awaiting Approval", "24 Mar 2026, 08:54"]
-        },
-        {
-          id: "req-002",
-          cells: ["REQ-24032", "Gulu Surveillance", "Gulu", "Fuel support", "Medium", "In Fulfillment", "24 Mar 2026, 08:09"]
-        },
-        {
-          id: "req-003",
-          cells: ["REQ-24028", "Kasese Case Team", "Kasese", "Clinical kits", "High", "Partially Fulfilled", "23 Mar 2026, 18:22"]
-        }
-      ]
-    },
     actions: [
       "Review requisitions by urgency and fulfillment stage.",
       "Track which requests are blocked on approval, stock, or transport.",
