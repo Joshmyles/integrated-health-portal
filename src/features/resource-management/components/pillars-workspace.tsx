@@ -112,6 +112,7 @@ function getNormalizedNames(pillars: PillarRecord[]) {
 
 export function PillarsWorkspace() {
   const [searchValue, setSearchValue] = useState("");
+  const [openMenuPillarId, setOpenMenuPillarId] = useState<number | null>(null);
   const [editingPillar, setEditingPillar] = useState<PillarRecord | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<PillarRecord | null>(null);
@@ -171,11 +172,24 @@ export function PillarsWorkspace() {
     : null;
 
   useEffect(() => {
+    function handleDocumentClick(event: MouseEvent) {
+      const target = event.target;
+
+      if (!(target instanceof Element)) {
+        return;
+      }
+
+      if (!target.closest("[data-actions-menu]")) {
+        setOpenMenuPillarId(null);
+      }
+    }
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") {
         return;
       }
 
+      setOpenMenuPillarId(null);
       setIsCreateOpen(false);
       setEditingPillar(null);
       setDeleteTarget(null);
@@ -186,14 +200,17 @@ export function PillarsWorkspace() {
       deleteMutation.reset();
     }
 
+    document.addEventListener("mousedown", handleDocumentClick);
     document.addEventListener("keydown", handleKeyDown);
 
     return () => {
+      document.removeEventListener("mousedown", handleDocumentClick);
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, [createMutation, deleteMutation, updateMutation]);
 
   function openCreateModal() {
+    setOpenMenuPillarId(null);
     setEditingPillar(null);
     setIsCreateOpen(true);
     setFormState(INITIAL_FORM_STATE);
@@ -203,6 +220,7 @@ export function PillarsWorkspace() {
   }
 
   function openEditModal(pillar: PillarRecord) {
+    setOpenMenuPillarId(null);
     setIsCreateOpen(false);
     setEditingPillar(pillar);
     setFormState(createFormState(pillar));
@@ -212,6 +230,7 @@ export function PillarsWorkspace() {
   }
 
   function closeFormModal() {
+    setOpenMenuPillarId(null);
     setIsCreateOpen(false);
     setEditingPillar(null);
     setFormState(INITIAL_FORM_STATE);
@@ -267,6 +286,7 @@ export function PillarsWorkspace() {
     }
 
     await deleteMutation.mutateAsync(deleteTarget.id);
+    setOpenMenuPillarId(null);
     setDeleteTarget(null);
   }
 
@@ -372,22 +392,49 @@ export function PillarsWorkspace() {
                     </span>
                   </td>
                   <td>{formatDateTime(pillar.updated_at)}</td>
-                  <td>
-                    <div className={styles.tableActions}>
+                  <td className={styles.actionsCell}>
+                    <div className={styles.actionsMenuWrap} data-actions-menu="">
                       <button
-                        className={styles.actionButton}
-                        onClick={() => openEditModal(pillar)}
+                        aria-expanded={openMenuPillarId === pillar.id}
+                        aria-haspopup="menu"
+                        className={styles.moreButton}
+                        onClick={() =>
+                          setOpenMenuPillarId((current) =>
+                            current === pillar.id ? null : pillar.id
+                          )
+                        }
                         type="button"
                       >
-                        Edit
+                        <span aria-hidden="true" className={styles.moreDots}>
+                          <svg fill="currentColor" height="16" viewBox="0 0 20 20" width="16">
+                            <circle cx="10" cy="4.2" r="1.4" />
+                            <circle cx="10" cy="10" r="1.4" />
+                            <circle cx="10" cy="15.8" r="1.4" />
+                          </svg>
+                        </span>
                       </button>
-                      <button
-                        className={styles.actionButton}
-                        onClick={() => setDeleteTarget(pillar)}
-                        type="button"
-                      >
-                        Delete
-                      </button>
+
+                      {openMenuPillarId === pillar.id ? (
+                        <div className={styles.dropdown} role="menu">
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => openEditModal(pillar)}
+                            type="button"
+                          >
+                            Edit pillar
+                          </button>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={() => {
+                              setOpenMenuPillarId(null);
+                              setDeleteTarget(pillar);
+                            }}
+                            type="button"
+                          >
+                            Delete pillar
+                          </button>
+                        </div>
+                      ) : null}
                     </div>
                   </td>
                 </tr>
