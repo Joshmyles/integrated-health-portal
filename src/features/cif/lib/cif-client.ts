@@ -1,5 +1,7 @@
 import type {
+  MeaslesPatientsResponse,
   MpoxPatientsResponse,
+  PolioPatientsResponse,
   VhfClinicalSignsResponse,
   VhfHospitalizationResponse,
   VhfInvestigatorResponse,
@@ -129,4 +131,14 @@ export function saveVhfSection(
 
 export function fetchMpoxPatients() {
   return requestJson<MpoxPatientsResponse>("/api/mpox/patients");
+}
+
+export function fetchMeaslesPatients(outbreakId: string) {
+  const search = new URLSearchParams({ outbreak_id: outbreakId });
+  return requestJson<MeaslesPatientsResponse>(`/api/measles/patients?${search.toString()}`);
+}
+
+export function fetchPolioPatients(outbreakId: string) {
+  const search = new URLSearchParams({ outbreak_id: outbreakId });
+  return requestJson<PolioPatientsResponse>(`/api/polio/patients?${search.toString()}`);
 }

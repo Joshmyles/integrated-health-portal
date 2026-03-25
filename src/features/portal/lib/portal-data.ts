@@ -116,7 +116,9 @@ const portalTree: PortalTreeNode[] = [
           { id: "cif-home", label: "Home", kind: "item" },
           { id: "cif-outbreak", label: "Outbreak", kind: "item" },
           { id: "cif-vhf", label: "VHF", kind: "item" },
-          { id: "cif-mpox", label: "MPOX", kind: "item" }
+          { id: "cif-mpox", label: "MPOX", kind: "item" },
+          { id: "cif-measles", label: "Measles", kind: "item" },
+          { id: "cif-polio", label: "Polio", kind: "item" }
         ]
       },
       { id: "contact-tracing", label: "Contact Tracing", kind: "item" },
@@ -1114,6 +1116,44 @@ const portalContentById: Record<string, PortalPageContent> = {
       "Confirm cluster assignment is current.",
       "Validate rash onset and interview completeness.",
       "Review open records for missing exposure or contact details."
+    ]
+  }),
+  "cif-measles": createLeafPage({
+    id: "cif-measles",
+    title: "Measles",
+    source: "response.health.go.ug/api/measles/patients?outbreak_id=...",
+    cadence: "Live outbreak lookup",
+    owner: "Measles Incident Team",
+    intro:
+      "Use the measles patient file to load live patient records by outbreak ID and review current case status in a disease-specific screen.",
+    actions: [
+      "Enter the outbreak ID before loading the measles patient list.",
+      "Review active and recovered patients using the live response feed.",
+      "Refresh the list after upstream changes when case counts affect field decisions."
+    ],
+    checks: [
+      "Confirm the outbreak ID is correct before relying on the results.",
+      "Validate active and recovered statuses against the current response situation.",
+      "Retry the lookup if the upstream service or session has expired."
+    ]
+  }),
+  "cif-polio": createLeafPage({
+    id: "cif-polio",
+    title: "Polio",
+    source: "response.health.go.ug/api/polio/patients?outbreak_id=...",
+    cadence: "Live outbreak lookup",
+    owner: "Polio Incident Team",
+    intro:
+      "Use the polio patient file to load live patient records by outbreak ID and review current case status in a disease-specific screen.",
+    actions: [
+      "Enter the outbreak ID before loading the polio patient list.",
+      "Review active and recovered patients using the live response feed.",
+      "Refresh the list after upstream changes when case counts affect field decisions."
+    ],
+    checks: [
+      "Confirm the outbreak ID is correct before relying on the results.",
+      "Validate active and recovered statuses against the current response situation.",
+      "Retry the lookup if the upstream service or session has expired."
     ]
   }),
   "contact-tracing": createLeafPage({

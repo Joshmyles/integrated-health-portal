@@ -1,16 +1,16 @@
 "use client";
 
 import { useDeferredValue, useState } from "react";
-import { useMpoxPatients } from "@/src/features/cif/hooks/use-mpox-patients";
+import { usePolioPatients } from "@/src/features/cif/hooks/use-polio-patients";
 import { CifRequestError } from "@/src/features/cif/lib/cif-client";
-import type { MpoxPatient } from "@/src/features/cif/types/cif";
+import type { PolioPatient } from "@/src/features/cif/types/cif";
 import styles from "./cif-vhf-workspace.module.css";
 
 function formatStatus(status: string) {
   return status.trim() || "Unknown";
 }
 
-function buildPatientSearchText(patient: MpoxPatient) {
+function buildPatientSearchText(patient: PolioPatient) {
   return [patient.id.toString(), patient.patient_name, formatStatus(patient.status)]
     .join(" ")
     .toLowerCase();
@@ -30,13 +30,15 @@ function getStatusClass(status: string) {
   return styles.statusWarning;
 }
 
-export function CifMpoxWorkspace() {
+export function CifPolioWorkspace() {
+  const [draftOutbreakId, setDraftOutbreakId] = useState("9");
+  const [selectedOutbreakId, setSelectedOutbreakId] = useState("9");
   const [searchValue, setSearchValue] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const deferredSearch = useDeferredValue(searchValue.trim().toLowerCase());
 
-  const query = useMpoxPatients();
-  const patients = query.data?.mpox_patients ?? [];
+  const query = usePolioPatients(selectedOutbreakId);
+  const patients = query.data?.polio_patients ?? [];
 
   const statusOptions = Array.from(new Set(patients.map((patient) => formatStatus(patient.status))))
     .filter(Boolean)
@@ -63,22 +65,39 @@ export function CifMpoxWorkspace() {
     setStatusFilter("all");
   }
 
+  function loadPatients() {
+    setSelectedOutbreakId(draftOutbreakId.trim());
+    setSearchValue("");
+    setStatusFilter("all");
+  }
+
   return (
     <div className={styles.workspace}>
       <div className={styles.summaryGrid}>
         <article className={styles.summaryCard}>
+          <div className={styles.summaryLabel}>Selected outbreak</div>
+          <div className={styles.summaryValue}>{selectedOutbreakId || "—"}</div>
+          <p className={styles.summaryNote}>The outbreak ID currently loaded into the CIF query.</p>
+        </article>
+        <article className={styles.summaryCard}>
           <div className={styles.summaryLabel}>Total patients</div>
-          <div className={styles.summaryValue}>{query.isLoading ? "—" : patients.length}</div>
-          <p className={styles.summaryNote}>Live rows from the MPOX patient endpoint.</p>
+          <div className={styles.summaryValue}>
+            {selectedOutbreakId && !query.isLoading ? patients.length : "—"}
+          </div>
+          <p className={styles.summaryNote}>Live rows returned for the selected outbreak.</p>
         </article>
         <article className={styles.summaryCard}>
           <div className={styles.summaryLabel}>Active</div>
-          <div className={styles.summaryValue}>{query.isLoading ? "—" : activeCount}</div>
-          <p className={styles.summaryNote}>Patients currently marked as active.</p>
+          <div className={styles.summaryValue}>
+            {selectedOutbreakId && !query.isLoading ? activeCount : "—"}
+          </div>
+          <p className={styles.summaryNote}>Patients still marked as active.</p>
         </article>
         <article className={styles.summaryCard}>
           <div className={styles.summaryLabel}>Recovered</div>
-          <div className={styles.summaryValue}>{query.isLoading ? "—" : recoveredCount}</div>
+          <div className={styles.summaryValue}>
+            {selectedOutbreakId && !query.isLoading ? recoveredCount : "—"}
+          </div>
           <p className={styles.summaryNote}>Patients already marked as recovered.</p>
         </article>
       </div>
@@ -88,58 +107,75 @@ export function CifMpoxWorkspace() {
           <div>
             <h2 className={styles.panelTitle}>Patient Query</h2>
             <p className={styles.panelCopy}>
-              Review the live MPOX patient list using the same CIF workspace pattern as VHF,
-              including a query panel, a filtered results panel, and status-focused summary cards.
+              Load polio patients by outbreak ID using the same CIF interface pattern as VHF, with
+              a dedicated query panel, results panel, and shared table styling.
             </p>
           </div>
           <div className={styles.resultMeta}>
-            <span>GET /api/mpox/patients</span>
-            <span>{query.isFetching ? "Refreshing" : "Live session"}</span>
+            <span>{selectedOutbreakId ? `Outbreak ${selectedOutbreakId}` : "Awaiting query"}</span>
           </div>
         </div>
 
         <div className={styles.toolbar}>
           <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel} htmlFor="mpox-search">
+            <label className={styles.fieldLabel} htmlFor="polio-outbreak-id">
+              Outbreak ID
+            </label>
+            <input
+              className={styles.textInput}
+              id="polio-outbreak-id"
+              inputMode="numeric"
+              onChange={(event) => setDraftOutbreakId(event.target.value)}
+              placeholder="Enter outbreak ID"
+              value={draftOutbreakId}
+            />
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.fieldLabel} htmlFor="polio-search">
               Search patients
             </label>
             <input
               className={styles.textInput}
-              id="mpox-search"
+              disabled={!selectedOutbreakId}
+              id="polio-search"
               onChange={(event) => setSearchValue(event.target.value)}
               placeholder="Search by patient ID, name, or status"
               value={searchValue}
             />
           </div>
 
-          <div className={styles.fieldGroup}>
-            <label className={styles.fieldLabel} htmlFor="mpox-status">
-              Status
-            </label>
-            <select
-              className={styles.selectInput}
-              id="mpox-status"
-              onChange={(event) => setStatusFilter(event.target.value)}
-              value={statusFilter}
-            >
-              <option value="all">All statuses</option>
-              {statusOptions.map((status) => (
-                <option key={status} value={status}>
-                  {status}
-                </option>
-              ))}
-            </select>
-          </div>
-
           <div className={styles.toolbarActions}>
-            {(searchValue || statusFilter !== "all") ? (
+            <div className={styles.fieldGroup}>
+              <label className={styles.fieldLabel} htmlFor="polio-status">
+                Status
+              </label>
+              <select
+                className={styles.selectInput}
+                disabled={!selectedOutbreakId}
+                id="polio-status"
+                onChange={(event) => setStatusFilter(event.target.value)}
+                value={statusFilter}
+              >
+                <option value="all">All statuses</option>
+                {statusOptions.map((status) => (
+                  <option key={status} value={status}>
+                    {status}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button className={styles.secondaryButton} onClick={loadPatients} type="button">
+              Load patients
+            </button>
+            {(searchValue || statusFilter !== "all") && selectedOutbreakId ? (
               <button className={styles.secondaryButton} onClick={clearFilters} type="button">
                 Clear filters
               </button>
             ) : null}
             <button
               className={styles.secondaryButton}
-              disabled={query.isFetching}
+              disabled={!selectedOutbreakId || query.isFetching}
               onClick={() => query.refetch()}
               type="button"
             >
@@ -152,12 +188,16 @@ export function CifMpoxWorkspace() {
           <p className={styles.errorMessage}>
             {query.error instanceof CifRequestError
               ? query.error.message
-              : "The MPOX patient list could not be loaded."}
+              : "The polio patient list could not be loaded."}
+          </p>
+        ) : !selectedOutbreakId ? (
+          <p className={styles.statusMessage}>
+            Enter an outbreak ID to load the live polio patient list.
           </p>
         ) : (
           <p className={styles.statusMessage}>
             {query.isLoading
-              ? "Loading live MPOX patients..."
+              ? `Loading polio patients for outbreak ${selectedOutbreakId}...`
               : `${patients.length} patient${patients.length !== 1 ? "s" : ""} loaded, ${filteredPatients.length} shown after filters.`}
           </p>
         )}
@@ -168,18 +208,22 @@ export function CifMpoxWorkspace() {
           <div>
             <h2 className={styles.panelTitle}>Patient Results</h2>
             <p className={styles.panelCopy}>
-              The current response feed is displayed below using the same CIF results layout as the
-              VHF screen.
+              Live polio patients for the selected outbreak appear below in the same results view
+              used across the VHF CIF workspace.
             </p>
           </div>
           <div className={styles.resultMeta}>
+            <span>{selectedOutbreakId || "No outbreak selected"}</span>
             <span>{filteredPatients.length} visible</span>
-            <span>{statusFilter === "all" ? "All statuses" : statusFilter}</span>
           </div>
         </div>
 
-        {query.isLoading ? (
-          <div className={styles.emptyState}>Loading MPOX patients...</div>
+        {!selectedOutbreakId ? (
+          <div className={styles.emptyState}>
+            Select an outbreak ID first to load polio patient records.
+          </div>
+        ) : query.isLoading ? (
+          <div className={styles.emptyState}>Loading polio patients...</div>
         ) : filteredPatients.length ? (
           <>
             <div className={styles.tableWrap}>
@@ -198,7 +242,9 @@ export function CifMpoxWorkspace() {
                         <div className={styles.rowPrimary}>
                           {patient.patient_name || "Unnamed patient"}
                         </div>
-                        <div className={styles.rowSecondary}>MPOX case record</div>
+                        <div className={styles.rowSecondary}>
+                          Outbreak {selectedOutbreakId}
+                        </div>
                       </td>
                       <td>{patient.id}</td>
                       <td>
@@ -212,12 +258,13 @@ export function CifMpoxWorkspace() {
               </table>
             </div>
             <p className={styles.tableFootnote}>
-              This view reflects the live MPOX patient response and keeps the CIF presentation
-              aligned with VHF.
+              This view reflects the live polio patients returned for the outbreak ID you selected.
             </p>
           </>
         ) : (
-          <div className={styles.emptyState}>No MPOX patients matched the current filters.</div>
+          <div className={styles.emptyState}>
+            No polio patients matched the current filters.
+          </div>
         )}
       </section>
     </div>

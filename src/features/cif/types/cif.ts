@@ -228,3 +228,23 @@ export interface MpoxPatient {
 export interface MpoxPatientsResponse {
   mpox_patients: MpoxPatient[];
 }
+
+export interface MeaslesPatient {
+  id: number;
+  patient_name: string;
+  status: string;
+}
+
+export interface MeaslesPatientsResponse {
+  measles_patients: MeaslesPatient[];
+}
+
+export interface PolioPatient {
+  id: number;
+  patient_name: string;
+  status: string;
+}
+
+export interface PolioPatientsResponse {
+  polio_patients: PolioPatient[];
+}

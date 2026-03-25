@@ -5,6 +5,8 @@ import styles from "./portal-shell.module.css";
 import type { PortalPageContent } from '@/src/features/portal/types/portal';
 import { OutbreakWorkspace } from '@/src/features/outbreak/components/outbreak-workspace';
 import { CifMpoxWorkspace } from '@/src/features/cif/components/cif-mpox-workspace';
+import { CifMeaslesWorkspace } from '@/src/features/cif/components/cif-measles-workspace';
+import { CifPolioWorkspace } from '@/src/features/cif/components/cif-polio-workspace';
 import { DepartmentsManagementWorkspace } from '@/src/features/portal/components/departments-management-workspace';
 import { SettingsWorkspace } from '@/src/features/settings/components/settings-workspace';
 import { EmployeeManagementWorkspace } from '@/src/features/portal/components/employee-management-workspace';
@@ -33,6 +35,8 @@ export function ContentPanel({
   const isCifVhf = content?.id === 'cif-vhf';
   const isSettings = content?.id === 'system-settings';
   const isCifMpox = content?.id === 'cif-mpox';
+  const isCifMeasles = content?.id === 'cif-measles';
+  const isCifPolio = content?.id === 'cif-polio';
   const isDeploymentPillars = content?.id === 'deployment-pillars';
   const isDeploymentResources = content?.id === 'deployment-resources';
   const isDeploymentActivityLogs = content?.id === 'deployment-activity-logs';
@@ -86,6 +90,8 @@ export function ContentPanel({
             !isUserManagement &&
             !isCifVhf &&
             !isCifMpox &&
+            !isCifMeasles &&
+            !isCifPolio &&
             !isDeploymentPillars &&
             !isDeploymentResources &&
             !isEmployeesPage &&
@@ -116,6 +122,8 @@ export function ContentPanel({
             !isUserManagement &&
             !isCifVhf &&
             !isCifMpox &&
+            !isCifMeasles &&
+            !isCifPolio &&
             !isDeploymentPillars &&
             !isDeploymentResources &&
             !isDeploymentActivityLogs &&
@@ -170,6 +178,8 @@ export function ContentPanel({
           {isOutbreakWorkspace ? <OutbreakWorkspace /> : null}
           {isCifVhf ? <CifVhfWorkspace /> : null}
           {isCifMpox ? <CifMpoxWorkspace /> : null}
+          {isCifMeasles ? <CifMeaslesWorkspace /> : null}
+          {isCifPolio ? <CifPolioWorkspace /> : null}
           {isDeploymentPillars ? <PillarsWorkspace /> : null}
           {isDeploymentResources ? <ResourcesWorkspace /> : null}
           {isDeploymentActivityLogs ? <ActivityLogsWorkspace /> : null}
@@ -204,6 +214,8 @@ export function ContentPanel({
             !isUserManagement &&
             !isOutbreakWorkspace &&
             !isSettings &&
+            !isCifMeasles &&
+            !isCifPolio &&
             !isEmployeesPage &&
             !isRrtDeploymentsPage &&
             !isRrtTeamsPage &&
